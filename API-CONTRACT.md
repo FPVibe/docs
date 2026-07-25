@@ -180,7 +180,7 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
     "part_name": "0702 Motor",
     "part_type": "motor",
     "qty_in_build": 4,
-    "role": "motors",
+    "role": null,
     "on_hand": 12,
     "allocated": 4,
     "free": 8
@@ -190,7 +190,7 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
     "part_name": "BetaFPV F4 1S AIO",
     "part_type": "fc",
     "qty_in_build": 1,
-    "role": "fc-aio",
+    "role": null,
     "on_hand": 2,
     "allocated": 1,
     "free": 1
@@ -200,7 +200,7 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
 
 **How allocation is computed:**
 
-Parts are grouped by `name + type` to relate stock rows to installed rows. A single logical part (e.g. "0702 Motor") may have multiple rows: one or more top-level stock rows (`parent_id IS NULL`, `status: "unused"`) and one child row per build that installs it (`parent_id` pointing to the craft, `status: "in-use"`). The grouping key is `name + type`.
+Parts are grouped by `name + type` to relate stock rows to installed rows. A single logical part (e.g. "0702 Motor") may have multiple rows: one or more top-level stock rows (`parent_id IS NULL`, `status: "unused"`) and one child row per build that installs it (`parent_id` pointing to the build, `status: "in-use"`). The grouping key is `name + type`.
 
 **Grouping key constraint:** `name` is treated as a stable identifier within a type — parts are expected to use consistent naming across stock and installed rows (e.g. always "0702 Motor", not "0702 motor" or "0702Motor"). If disambiguation is needed, include vendor info in the name (e.g. "BetaFPV 0702 Motor"). Future versions may switch to a stable surrogate key if this proves fragile.
 
@@ -209,7 +209,9 @@ Parts are grouped by `name + type` to relate stock rows to installed rows. A sin
 3. `allocated` = sum of `qty_in_build` across ALL builds that install this part — i.e., the `quantity` of every child row whose `parent_id` points to a build and whose name+type matches this part.
 4. `free` = `on_hand` - `allocated` (= total owned minus total installed across all builds).
 
-**Example:** You own 12 "0702 Motor" (10 in stock + 2 installed in LionBee). `on_hand` = 12, `allocated` = 2, `free` = 10.
+**Example:** You own 12 "0702 Motor" (8 in stock + 4 installed in LionBee). `on_hand` = 12, `allocated` = 4, `free` = 8 — matching the response example above and the reverse view in §3.6.
+
+**Note on `role`:** the parts schema has no `role` column yet, and the children-are-the-BOM model has nowhere to store one — see open question §7.6. Until that's resolved, `role` is nullable and implementations return `null`, as the example above shows; once a source for the field exists, the intent is values like `"motors"` or `"fc-aio"`.
 
 ### 3.4 GET /api/parts
 
@@ -306,16 +308,16 @@ reverse view of the BOM: "I have this part — where is it used?"
       "build_id": 5,
       "build_name": "LionBee",
       "qty": 4
-    },
-    {
-      "build_id": 7,
-      "build_name": "Air65III",
-      "qty": 4
     }
   ],
-  "free": 4
+  "free": 8
 }
 ```
+
+Each build that installs the part appears as one entry in `allocated`. (In this
+example dataset only LionBee installs the 0702 Motor — Air65III runs 0802 motors,
+per §3.1 — so `allocated` has one entry and the totals match §3.3: `on_hand` 12,
+`allocated` 4, `free` 8.)
 
 **404 when part not found:**
 ```json
@@ -593,9 +595,16 @@ above. The `GET /api/sessions/:id` response includes it too.
 ### 5.1 Consumer: flowchart fetching builds from inventory
 
 ```typescript
-// In flowchart's session form — fetching the craft dropdown
+// In flowchart's session form — fetching the craft dropdown.
+// This code runs in the browser (note localStorage below). INVENTORY_URL
+// originates as a server-side env var on flowchart (Node/Hono) and must be
+// handed to the client — e.g. injected into the page at render time or served
+// from a tiny /api/config endpoint. How it's exposed, and whether the browser
+// can reach the Docker-internal hostname at all, is open question §7.7.
 
-const INVENTORY_URL = Deno.env.get("INVENTORY_URL") ?? "";
+const INVENTORY_URL =
+  (window as Window & { FPVIBE_CONFIG?: { INVENTORY_URL?: string } })
+    .FPVIBE_CONFIG?.INVENTORY_URL ?? "";
 
 async function fetchBuilds(): Promise<Build[] | null> {
   if (!INVENTORY_URL) return null;  // federation disabled
@@ -745,3 +754,25 @@ updates. Breaking changes are noted in the changelog.
    If packing lists live in flowchart, they'd be `GET /api/packing-lists?session_type=whoop`.
    If they live in inventory, they'd be under inventory's API. Depends on
    decision #6 in ARCHITECTURE.md (which tool owns packing lists).
+
+6. **Where does the BOM `role` field come from?**
+   `GET /api/builds/:id/bom` (§3.3) returns a `role` field, but the parts table
+   has no role column and the children-are-the-BOM model has nowhere to store
+   one. Options: (a) drop the field — `part_type` conveys nearly the same
+   signal for n=1; (b) derive it from the child part's `type`; (c) add an
+   optional `role` column set when a part is installed into a build (allows
+   e.g. two cameras distinguished as main/backup). Until decided,
+   implementations return `null` (§3.3 note).
+
+7. **Browser-reachable URLs and CORS.**
+   The `INVENTORY_URL` / `SESSIONS_URL` examples use Docker-network hostnames
+   (`http://fpv-inventory:8000`) that resolve container-to-container but not
+   from the user's browser — yet §5.1's craft-dropdown fetch runs client-side
+   (it uses localStorage), and the ARCHITECTURE.md §5.3 cross-tool links are
+   clicked in a browser. Either (a) each tool's server proxies cross-tool reads
+   and rendered links use browser-reachable (Runtipi/tailnet) hostnames, or
+   (b) tools serve CORS headers and env config splits into internal vs
+   browser-facing base URLs — prefer an explicit allowlist of sibling origins
+   over `Access-Control-Allow-Origin: *`, since with no auth a wildcard would
+   let any website the user's browser visits read these local APIs. Decide
+   before Phase 2 — it dictates where the degradation logic lives.
