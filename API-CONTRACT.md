@@ -209,7 +209,9 @@ Parts are grouped by `name + type` to relate stock rows to installed rows. A sin
 3. `allocated` = sum of `qty_in_build` across ALL builds that install this part — i.e., the `quantity` of every child row whose `parent_id` points to a build and whose name+type matches this part.
 4. `free` = `on_hand` - `allocated` (= total owned minus total installed across all builds).
 
-**Example:** You own 12 "0702 Motor" (10 in stock + 2 installed in LionBee). `on_hand` = 12, `allocated` = 2, `free` = 10.
+**Example:** You own 12 "0702 Motor" (8 in stock + 4 installed in LionBee). `on_hand` = 12, `allocated` = 4, `free` = 8 — matching the response example above and the reverse view in §3.6.
+
+**Note on `role`:** the parts schema has no `role` column yet, and the children-are-the-BOM model has nowhere to store one — see open question §7.6. Until that's resolved, implementations return `null` for `role`; the values shown in the example above ("motors", "fc-aio") illustrate the intended shape once a source for the field exists.
 
 ### 3.4 GET /api/parts
 
@@ -306,16 +308,16 @@ reverse view of the BOM: "I have this part — where is it used?"
       "build_id": 5,
       "build_name": "LionBee",
       "qty": 4
-    },
-    {
-      "build_id": 7,
-      "build_name": "Air65III",
-      "qty": 4
     }
   ],
-  "free": 4
+  "free": 8
 }
 ```
+
+Each build that installs the part appears as one entry in `allocated`. (In this
+example dataset only LionBee installs the 0702 Motor — Air65III runs 0802 motors,
+per §3.1 — so `allocated` has one entry and the totals match §3.3: `on_hand` 12,
+allocated 4, `free` 8.)
 
 **404 when part not found:**
 ```json
@@ -593,9 +595,12 @@ above. The `GET /api/sessions/:id` response includes it too.
 ### 5.1 Consumer: flowchart fetching builds from inventory
 
 ```typescript
-// In flowchart's session form — fetching the craft dropdown
+// In flowchart's session form — fetching the craft dropdown.
+// flowchart is Node (Hono), not Deno; and note this logic uses localStorage,
+// i.e. it runs in the browser — where the fetch executes and how INVENTORY_URL
+// reaches the client is open question §7.7.
 
-const INVENTORY_URL = Deno.env.get("INVENTORY_URL") ?? "";
+const INVENTORY_URL = process.env.INVENTORY_URL ?? "";
 
 async function fetchBuilds(): Promise<Build[] | null> {
   if (!INVENTORY_URL) return null;  // federation disabled
@@ -745,3 +750,24 @@ updates. Breaking changes are noted in the changelog.
    If packing lists live in flowchart, they'd be `GET /api/packing-lists?session_type=whoop`.
    If they live in inventory, they'd be under inventory's API. Depends on
    decision #6 in ARCHITECTURE.md (which tool owns packing lists).
+
+6. **Where does the BOM `role` field come from?**
+   `GET /api/builds/:id/bom` (§3.3) returns a `role` field, but the parts table
+   has no role column and the children-are-the-BOM model has nowhere to store
+   one. Options: (a) drop the field — `part_type` conveys nearly the same
+   signal for n=1; (b) derive it from the child part's `type`; (c) add an
+   optional `role` column set when a part is installed into a build (allows
+   e.g. two cameras distinguished as main/backup). Until decided,
+   implementations return `null` (§3.3 note).
+
+7. **Browser-reachable URLs and CORS.**
+   The `INVENTORY_URL` / `SESSIONS_URL` examples use Docker-network hostnames
+   (`http://fpv-inventory:8000`) that resolve container-to-container but not
+   from the user's browser — yet §5.1's craft-dropdown fetch runs client-side
+   (it uses localStorage), and the ARCHITECTURE.md §5.3 cross-tool links are
+   clicked in a browser. Either (a) each tool's server proxies cross-tool reads
+   and rendered links use browser-reachable (Runtipi/tailnet) hostnames, or
+   (b) tools serve CORS headers (`Access-Control-Allow-Origin: *` is acceptable
+   with no auth, local-only) and env config splits into internal vs
+   browser-facing base URLs. Decide before Phase 2 — it dictates where the
+   degradation logic lives.

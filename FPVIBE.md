@@ -1,5 +1,13 @@
 FPVibe — Federation Spec & Implementation Brief
-Status: Draft v0.3 · living document Audience: a Claude Code session that has previously worked on flowchart, plus Cori. Purpose: define a small federation of single-purpose FPV tools ("FPVibe"), and brief the implementing agent on how to decompose the existing flowchart work into it.
+Status: v0.3 · SUPERSEDED — retained for historical reference only
+
+> ⚠️ **This spec is superseded by ARCHITECTURE.md v1.0 (and its companion API-CONTRACT.md).**
+> The git-substrate model described here (YAML-in-git, commit-on-save, `fpv:` URN scheme,
+> resolver service, forward-auth, meta-compose) was replaced by per-tool SQLite databases
+> federated via read-only JSON APIs. Do not implement from this document.
+> See ARCHITECTURE.md §2 for a summary of what changed and what survived.
+
+Audience: a Claude Code session that has previously worked on flowchart, plus Cori. Purpose: define a small federation of single-purpose FPV tools ("FPVibe"), and brief the implementing agent on how to decompose the existing flowchart work into it.
 
 
 ________________
