@@ -323,7 +323,7 @@ reverse view of the BOM: "I have this part — where is it used?"
 ### 3.7 GET /api/gear
 
 Returns all gear items (discrete serial/warranty assets). Gear is the
-DumbAssets-shaped slice — distinct from Parts by the fungible-vs-discrete
+discrete-asset counterpart to Parts — distinct by the fungible-vs-discrete
 boundary. A bag of props is Parts; your goggles are Gear.
 
 **Query parameters:**

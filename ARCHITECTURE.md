@@ -214,6 +214,7 @@ GET /api/builds
 GET /api/builds/:id
   → Single build with its component tree (the BOM)
   → { id, name, status, ... , children: [{ id, name, type, quantity, status }] }
+  → (children shown as minimum subset; full child shape: see API-CONTRACT.md §3.2)
 
 GET /api/builds/:id/bom
   → BOM with part details + computed allocation
