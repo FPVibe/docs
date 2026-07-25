@@ -398,6 +398,8 @@ Returns a single gear item with full details.
 { "error": "Gear not found" }
 ```
 
+**Note:** Gear reuses the `parts` and `part_history` tables (gear is `type: "gear"` in the parts table). The `part_id` field in history entries refers to the gear item's own ID in the `parts` table — there is no separate `gear_id` or `gear_history` table.
+
 ### 3.9 GET /api/stock
 
 Returns aggregated stock by type/status across all parts. This powers the

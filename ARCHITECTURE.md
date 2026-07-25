@@ -94,7 +94,7 @@ FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an
 │  │ SQLite:      │       │ SQLite:          │               │
 │  │  sessions    │       │  parts           │               │
 │  │  packs       │       │  part_history    │               │
-│  │  tricks      │       │  gear (add)      │               │
+│  │  tricks      │       │                  │               │
 │  │  crashes     │       │                  │               │
 │  │  reviews     │       │ JSON API (add):  │               │
 │  │  equipment   │       │  GET /api/builds │               │
@@ -125,13 +125,13 @@ FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an
 │                                                             │
 │  ┌────────────────────┐    ┌──────────────────────────┐    │
 │  │ betaflight-blackbox │    │ Plugin marketplace repo  │    │
-│  │ (skill/MCP server)  │───││ fpvibe/skills or cori/fpv│    │
+│  │ (skill/MCP server)  │───│  fpvibe/skills or cori/fpv│    │
 │  │                     │    │ .claude-plugin/           │    │
 │  │ Runs in: Claude Code│    │   marketplace.json        │    │
 │  │ or Hermes+Ollama    │    │                           │    │
 │  │                     │    │ Read by: Claude Code,     │    │
 │  │ Joins by: naming,  │    │ Hermes (natively)         │    │
-│  │ theme, link convents │    │                           │    │
+│  │ theme, link convs   │    │                           │    │
 │  └────────────────────┘    └──────────────────────────┘    │
 │                                                             │
 │  ┌──────────────────────────────────────────┐              │
@@ -225,7 +225,7 @@ GET /api/parts
   → [{ id, name, status, type, quantity, parent_id }]
 
 GET /api/parts/:id
-  → Single part with history
+  → Single part with history (full shape: see API-CONTRACT.md §3.5)
 
 GET /api/parts/:id/allocation
   → Where this part is allocated across all builds
