@@ -221,7 +221,7 @@ GET /api/builds/:id/bom
   → [{ part_id, part_name, part_type, qty_in_build, role, on_hand, allocated, free }]
 
 GET /api/parts
-  → All parts excluding gear (optional ?type= filter; gear via /api/gear)
+  → All parts including gear (optional ?type= filter; gear returned for backward compatibility, gear-specific fields via /api/gear)
   → [{ id, name, status, type, quantity, parent_id }]
 
 GET /api/parts/:id
@@ -295,7 +295,7 @@ A containerized tool is in the federation iff:
 Skills and static sites join by convention, not by API:
 
 1. **One job.** Same as containerized tools.
-2. **Adopts naming conventions.** Consistent terminology. Containerized tools use the `fpvibe-*` prefix; non-container members (skills, static sites, hardware) keep their existing names — the prefix convention applies to deployable containers, not to skills or reference data.
+2. **Adopts naming conventions.** Consistent terminology. New and promoted containerized tools use the `fpvibe-*` prefix (e.g. `fpvibe-spots`, `fpvibe-training`); existing containers (`flowchart`, `fpv-inventory`) are grandfathered. Non-container members (skills, static sites, hardware) keep their existing names — the prefix convention applies to deployable containers, not to skills or reference data.
 3. **Adopts theme tokens.** Uses the Multiboard-derived palette (§9) where applicable.
 4. **References entities by URL or ID.** A prop-pitch calculator references Part and Craft entities; the blackbox skill references Session entities.
 5. **Distributed via the plugin marketplace** (for skills) or GitHub Pages / Tipi nginx (for static tools).
