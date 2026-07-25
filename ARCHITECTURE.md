@@ -497,7 +497,7 @@ Each tool uses similar CSS. No shared theme file required for n=1 — just use t
 1. Create `fpvibe/skills` (or `cori/fpv`) repo with `.claude-plugin/marketplace.json`
 2. Add betaflight-blackbox skill as the first marketplace entry
 3. Verify Hermes reads the marketplace manifest natively
-4. Acceptance: `hermes skills install fpvibe/blackbox` (or equivalent) works; skill runs with local model via Ollama
+4. Acceptance: `hermes skills install fpvibe/betaflight-blackbox` (or equivalent) works; skill runs with local model via Ollama
 
 ### Phase 7: Documentation reconciliation
 
