@@ -213,7 +213,7 @@ Parts are grouped by name+type to relate stock rows to installed rows. A single 
 
 ### 3.4 GET /api/parts
 
-Returns all parts (excluding gear), optionally filtered by type. Gear items (type: "gear") are accessed via `/api/gear` (§3.7), not this endpoint. Use `?type=gear` to include them if needed.
+Returns all parts (excluding gear), optionally filtered by type. Gear items (type: "gear") are excluded by default; use `/api/gear` (§3.7) for gear-specific fields (serial number, warranty). If you must query gear through this endpoint, pass `?type=gear`, but the response will not include gear-only fields — `/api/gear` is the recommended endpoint.
 
 **Query parameters:**
 

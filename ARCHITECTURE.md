@@ -221,7 +221,8 @@ GET /api/builds/:id/bom
   → [{ part_id, part_name, part_type, qty_in_build, role, on_hand, allocated, free }]
 
 GET /api/parts
-  → All parts (optional ?type= filter)
+  → All parts EXCLUDING gear (optional ?type= filter)
+  → Gear is a separate concept: use /api/gear for serial/warranty fields
   → [{ id, name, status, type, quantity, parent_id }]
 
 GET /api/parts/:id
