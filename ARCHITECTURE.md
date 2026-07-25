@@ -131,7 +131,7 @@ FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an
 │  │ or Hermes+Ollama    │    │                           │    │
 │  │                     │    │ Read by: Claude Code,     │    │
 │  │ Joins by: naming,  │    │ Hermes (natively)         │    │
-│  │ theme, link convs   │    │                           │    │
+│  │ theme, link conv.   │    │                           │    │
 │  └────────────────────┘    └──────────────────────────┘    │
 │                                                             │
 │  ┌──────────────────────────────────────────┐              │
@@ -229,7 +229,7 @@ GET /api/parts/:id
 
 GET /api/parts/:id/allocation
   → Where this part is allocated across all builds
-  → { part_id, on_hand, allocated: [{ build_id, build_name, qty }], free }
+  → { part_id, part_name, on_hand, allocated: [{ build_id, build_name, qty }], free }
 
 GET /api/gear
   → All gear items (discrete serial/warranty assets)
@@ -497,7 +497,7 @@ Each tool uses similar CSS. No shared theme file required for n=1 — just use t
 1. Create `fpvibe/skills` (or `cori/fpv`) repo with `.claude-plugin/marketplace.json`
 2. Add betaflight-blackbox skill as the first marketplace entry
 3. Verify Hermes reads the marketplace manifest natively
-4. Acceptance: `hermes skills install fpvibe/blackbox` (or equivalent) works; skill runs with local model via Ollama
+4. Acceptance: `hermes skills install fpvibe/betaflight-blackbox` (or equivalent) works; skill runs with local model via Ollama
 
 ### Phase 7: Documentation reconciliation
 
