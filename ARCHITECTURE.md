@@ -218,7 +218,7 @@ GET /api/builds/:id
 
 GET /api/builds/:id/bom
   → BOM with part details + computed allocation
-  → [{ part_id, part_name, qty, role, on_hand, allocated, free }]
+  → [{ part_id, part_name, part_type, qty_in_build, role, on_hand, allocated, free }]
 
 GET /api/parts
   → All parts (optional ?type= filter)
