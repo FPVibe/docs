@@ -482,7 +482,7 @@ Each tool uses similar CSS. No shared theme file required for n=1 — just use t
 2. **Repair plan entity:** link a broken part to needed replacement parts + status tracking
 3. **From-the-bin builds:** guided assembly flow — pick components from inventory, create a new craft with those parts as children
 4. **Allocation mechanic:** inventory computes on-hand/allocated/free by reading its own parts + their parent-child relationships (children ARE the BOM). Report `on hand / allocated / free` per part.
-5. Acceptance: stock check shows "motors: 12 unused, 8 in-use" (the by-type/status aggregation of `GET /api/stock`); repair plan links broken motor to replacement; from-the-bin creates a new craft in inventory
+5. Acceptance: stock check shows "motors: 12 unused, 8 in-use" (the by-type/status aggregation of `GET /api/stock`); a part's allocation reports on-hand/allocated/free per part (e.g. "0702 Motor: 12 on hand, 4 allocated, 8 free", matching API-CONTRACT.md §3.3/§3.6); repair plan links broken motor to replacement; from-the-bin creates a new craft in inventory
 
 ### Phase 5: Gear packing lists
 

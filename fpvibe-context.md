@@ -12,8 +12,9 @@ Last compiled: 2026-07-04
 > (sessions) and `fpv-inventory` (parts/builds/gear); FPVIBE.md v0.3 — cited throughout this
 > document as the canonical living spec — is itself superseded by ARCHITECTURE.md +
 > API-CONTRACT.md; the `fpv:` URN/ID scheme and the six v0.3
-> open decisions are superseded by ARCHITECTURE.md §12. Kept for provenance; the "what exists /
-> next steps" tables in §5 no longer reflect current state.
+> open decisions are superseded by ARCHITECTURE.md §12. Kept for provenance: the body below is
+> the unedited 2026-07-04 snapshot and keeps its original framing (e.g. calling FPVIBE.md a
+> "living spec"); the "what exists / next steps" tables in §5 no longer reflect current state.
 
 
 ________________
