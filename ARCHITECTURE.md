@@ -73,7 +73,7 @@ FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an
 
 **flowchart** is the most mature containerized tool: full JSON REST API, 25KB seed data, session/progress/tricks/equipment/denver/plans/export-import. Known gap: offline writes fail (ISSUE-offline-first.md).
 
-**fpv-inventory** is functional but has no JSON API — pure server-rendered HTML form POSTs. Hierarchical parts (parent_id = assemblies), status, quantity, type, specs, photos, full history log. README is still template boilerpaste.
+**fpv-inventory** is functional but has no JSON API — pure server-rendered HTML form POSTs. Hierarchical parts (parent_id = assemblies), status, quantity, type, specs, photos, full history log. README is still template boilerplate.
 
 **fpv-tools** is a static PWA with three tools (CLI Merge, Rate Profile, IGOW Reference). Client-side only. Does not participate in server-side federation. Can deploy dual: GitHub Pages for public reach, nginx container in Tipi for private-behind-Tailscale access. Same artifact does both.
 
@@ -502,7 +502,7 @@ Each tool uses similar CSS. No shared theme file required for n=1 — just use t
 
 1. Replace FPVIBE.md v0.3 with this ARCHITECTURE.md in docs repo (this PR)
 2. Update fpvibe-context.md to reflect actual repo state (org exists, repos transferred, fpv-inventory has JSON API, blackbox skill is a citizen, gear packing lists are planned)
-3. Fix fpv-inventory README (still template boilerpaste)
+3. Fix fpv-inventory README (still template boilerplate)
 4. Migrate fpv-tools from `cori.github.io/fpv-tools` to `fpvibe.github.io`
 5. Fold in the inventory collation doc's source thread provenance
 

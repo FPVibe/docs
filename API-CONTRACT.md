@@ -200,12 +200,14 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
 
 **How allocation is computed:**
 
-1. For each child part of the build, get `qty_in_build` from the child record's `quantity` field.
-2. `on_hand` = the part's own `quantity` field. Each part record is a single SKU — the `quantity` field represents how many of that specific part you have. No grouping by name+type; each row is its own stock unit.
-3. `allocated` = sum of `qty_in_build` across ALL builds that have this part as a child (i.e., all parts where `parent_id` points to a build and `id` matches this part).
+Parts are grouped by name+type to relate stock rows to installed rows. A single logical part (e.g. "0702 Motor") may have multiple rows: one or more top-level stock rows (`parent_id IS NULL`, `status: "unused"`) and one child row per build that installs it (`parent_id` pointing to the craft, `status: "in-use"`). The grouping key is `name + type`.
+
+1. For each child part of the build, get `qty_in_build` from the child record's `quantity` field (how many of that part are installed in this build).
+2. `on_hand` = sum of `quantity` across all top-level stock rows (`parent_id IS NULL`, `status: "unused"`) in the same name+type group. This is the free stock pool for that part.
+3. `allocated` = sum of `qty_in_build` across ALL builds that install this part — i.e., the `quantity` of every child row whose `parent_id` points to a build and whose name+type matches this part. Each installed component row contributes its own `quantity` to the total.
 4. `free` = `on_hand` - `allocated`.
 
-**Important:** A part that is a child of a build (i.e., has a `parent_id` pointing to a craft) represents a component installed in that build — it is NOT also counted as free stock. The `quantity` field on a child part record represents how many of that part are installed in the parent build. Top-level parts (parent_id IS NULL) with `status: "unused"` are the stock pool; `on_hand` sums those. Installed components (children) are the allocation, not additional stock.
+**Important:** A part that is a child of a build (i.e., has a `parent_id` pointing to a craft) represents a component installed in that build — it is NOT also counted as free stock. The `quantity` field on a child part record represents how many of that part are installed in the parent build. Top-level parts (parent_id IS NULL) with `status: "unused"` are the stock pool; `on_hand` sums those. Installed components (children) are the allocation, not additional stock. A part row is either stock (top-level, unused) or an installed component (child of a build) — never both.
 
 ### 3.4 GET /api/parts
 
