@@ -125,7 +125,7 @@ FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an
 │                                                             │
 │  ┌────────────────────┐    ┌──────────────────────────┐    │
 │  │ betaflight-blackbox │    │ Plugin marketplace repo  │    │
-│  │ (skill/MCP server)  │───│  fpvibe/skills or cori/fpv│    │
+│  │ (skill)             │───│  fpvibe/skills or cori/fpv│    │
 │  │                     │    │ .claude-plugin/           │    │
 │  │ Runs in: Claude Code│    │   marketplace.json        │    │
 │  │ or Hermes+Ollama    │    │                           │    │
@@ -156,7 +156,6 @@ Each entity has exactly one authoritative owner. Other tools read via API; they 
 | Gear (discrete serial/warranty asset) | fpv-inventory | inventory |
 | Spot (flying location) | flowchart | flowchart (until promoted to own tool) |
 | Training plan / Drill | flowchart | flowchart (until promoted) |
-| Blackbox analysis | betaflight-blackbox skill | skill (not a database entity) |
 
 ### Graceful degradation
 
@@ -295,7 +294,7 @@ A containerized tool is in the federation iff:
 Skills and static sites join by convention, not by API:
 
 1. **One job.** Same as containerized tools.
-2. **Adopts naming conventions.** `fpvibe-*` prefix, consistent terminology.
+2. **Adopts naming conventions.** Consistent terminology. Containerized tools use the `fpvibe-*` prefix; non-container members (skills, static sites, hardware) keep their existing names — the prefix convention applies to deployable containers, not to skills or reference data.
 3. **Adopts theme tokens.** Uses the Multiboard-derived palette (§9) where applicable.
 4. **References entities by URL or ID.** A prop-pitch calculator references Part and Craft entities; the blackbox skill references Session entities.
 5. **Distributed via the plugin marketplace** (for skills) or GitHub Pages / Tipi nginx (for static tools).
