@@ -200,7 +200,7 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
 
 **How allocation is computed:**
 
-Parts are grouped by `name + type` to relate stock rows to installed rows. A single logical part (e.g. "0702 Motor") may have multiple rows: one or more top-level stock rows (`parent_id IS NULL`, `status: "unused"`) and one child row per build that installs it (`parent_id` pointing to the craft, `status: "in-use"`). The grouping key is `name + type`.
+Parts are grouped by `name + type` to relate stock rows to installed rows. A single logical part (e.g. "0702 Motor") may have multiple rows: one or more top-level stock rows (`parent_id IS NULL`, `status: "unused"`) and one child row per build that installs it (`parent_id` pointing to the build, `status: "in-use"`). The grouping key is `name + type`.
 
 **Grouping key constraint:** `name` is treated as a stable identifier within a type — parts are expected to use consistent naming across stock and installed rows (e.g. always "0702 Motor", not "0702 motor" or "0702Motor"). If disambiguation is needed, include vendor info in the name (e.g. "BetaFPV 0702 Motor"). Future versions may switch to a stable surrogate key if this proves fragile.
 
