@@ -596,11 +596,13 @@ above. The `GET /api/sessions/:id` response includes it too.
 
 ```typescript
 // In flowchart's session form — fetching the craft dropdown.
-// flowchart is Node (Hono), not Deno; and note this logic uses localStorage,
-// i.e. it runs in the browser — where the fetch executes and how INVENTORY_URL
-// reaches the client is open question §7.7.
+// This code runs in the browser (note localStorage below). INVENTORY_URL
+// originates as a server-side env var on flowchart (Node/Hono) and must be
+// handed to the client — e.g. injected into the page at render time or served
+// from a tiny /api/config endpoint. How it's exposed, and whether the browser
+// can reach the Docker-internal hostname at all, is open question §7.7.
 
-const INVENTORY_URL = process.env.INVENTORY_URL ?? "";
+const INVENTORY_URL = window.FPVIBE_CONFIG?.INVENTORY_URL ?? "";
 
 async function fetchBuilds(): Promise<Build[] | null> {
   if (!INVENTORY_URL) return null;  // federation disabled
