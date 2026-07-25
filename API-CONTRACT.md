@@ -180,7 +180,7 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
     "part_name": "0702 Motor",
     "part_type": "motor",
     "qty_in_build": 4,
-    "role": "motors",
+    "role": null,
     "on_hand": 12,
     "allocated": 4,
     "free": 8
@@ -190,7 +190,7 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
     "part_name": "BetaFPV F4 1S AIO",
     "part_type": "fc",
     "qty_in_build": 1,
-    "role": "fc-aio",
+    "role": null,
     "on_hand": 2,
     "allocated": 1,
     "free": 1
@@ -211,7 +211,7 @@ Parts are grouped by `name + type` to relate stock rows to installed rows. A sin
 
 **Example:** You own 12 "0702 Motor" (8 in stock + 4 installed in LionBee). `on_hand` = 12, `allocated` = 4, `free` = 8 — matching the response example above and the reverse view in §3.6.
 
-**Note on `role`:** the parts schema has no `role` column yet, and the children-are-the-BOM model has nowhere to store one — see open question §7.6. Until that's resolved, implementations return `null` for `role`; the values shown in the example above ("motors", "fc-aio") illustrate the intended shape once a source for the field exists.
+**Note on `role`:** the parts schema has no `role` column yet, and the children-are-the-BOM model has nowhere to store one — see open question §7.6. Until that's resolved, `role` is nullable and implementations return `null`, as the example above shows; once a source for the field exists, the intent is values like `"motors"` or `"fc-aio"`.
 
 ### 3.4 GET /api/parts
 

@@ -9,7 +9,9 @@ Last compiled: 2026-07-04
 > API federation (ARCHITECTURE.md v1.0). Known-stale items: repos now live under `FPVibe/*`
 > (not `cori/*`); fpv-tools is public on Pages; the planned `fpvibe-fleet` / `fpvibe-sessions` /
 > `fpvibe-inventory` / `fpvibe-tune` citizens were replaced by the actual tools `flowchart`
-> (sessions) and `fpv-inventory` (parts/builds/gear); the `fpv:` URN/ID scheme and the six v0.3
+> (sessions) and `fpv-inventory` (parts/builds/gear); FPVIBE.md v0.3 — cited throughout this
+> document as the canonical living spec — is itself superseded by ARCHITECTURE.md +
+> API-CONTRACT.md; the `fpv:` URN/ID scheme and the six v0.3
 > open decisions are superseded by ARCHITECTURE.md §12. Kept for provenance; the "what exists /
 > next steps" tables in §5 no longer reflect current state.
 
