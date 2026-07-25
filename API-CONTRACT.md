@@ -602,11 +602,9 @@ above. The `GET /api/sessions/:id` response includes it too.
 // from a tiny /api/config endpoint. How it's exposed, and whether the browser
 // can reach the Docker-internal hostname at all, is open question §7.7.
 
-declare global {
-  interface Window { FPVIBE_CONFIG?: { INVENTORY_URL?: string } }
-}
-
-const INVENTORY_URL = window.FPVIBE_CONFIG?.INVENTORY_URL ?? "";
+const INVENTORY_URL =
+  (window as Window & { FPVIBE_CONFIG?: { INVENTORY_URL?: string } })
+    .FPVIBE_CONFIG?.INVENTORY_URL ?? "";
 
 async function fetchBuilds(): Promise<Build[] | null> {
   if (!INVENTORY_URL) return null;  // federation disabled
