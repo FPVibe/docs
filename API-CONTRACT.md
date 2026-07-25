@@ -200,20 +200,18 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
 
 **How allocation is computed:**
 
-Parts are grouped by name+type to relate stock rows to installed rows. A single logical part (e.g. "0702 Motor") may have multiple rows: one or more top-level stock rows (`parent_id IS NULL`, `status: "unused"`) and one child row per build that installs it (`parent_id` pointing to the craft, `status: "in-use"`). The grouping key is `name + type`.
+1. For each child part of the build, get `qty_in_build` from the child record's `quantity` field.
+2. `on_hand` = the part's own `quantity` field. Each part record is a single SKU — the `quantity` field represents how many of that specific part you have. No grouping by name+type; each row is its own stock unit.
+3. `allocated` = sum of `qty_in_build` across ALL builds that have this part as a child (i.e., all parts where `parent_id` points to a build and `id` matches this part).
+4. `free` = `on_hand` - `allocated`.
 
-**Grouping key constraint:** `name` is treated as a stable identifier within a type — parts are expected to use consistent naming across stock and installed rows (e.g. always "0702 Motor", not "0702 motor" or "0702Motor"). The spec does not enforce uniqueness of `name + type` across different vendors; if two vendors sell parts with the same name+type they will be merged into one allocation group. If disambiguation is needed, include vendor info in the name (e.g. "BetaFPV 0702 Motor"). Renaming a part breaks grouping — all rows in a group should use the same name string. Future versions may switch to a stable surrogate key if this proves fragile in practice.
-
-1. For each child part of the build, get `qty_in_build` from the child record's `quantity` field (how many of that part are installed in this build).
-2. `on_hand` = total owned quantity = sum of `quantity` across ALL rows in the same name+type group (both top-level stock rows AND child rows installed in builds). This is the total quantity you own, regardless of where it is.
-3. `allocated` = sum of `qty_in_build` across ALL builds that install this part — i.e., the `quantity` of every child row whose `parent_id` points to a build and whose name+type matches this part. Each installed component row contributes its own `quantity` to the total.
-4. `free` = `on_hand` - `allocated` (= total owned minus total installed across all builds).
-
-**Important:** A part that is a child of a build (i.e., has a `parent_id` pointing to a craft) represents a component installed in that build — it is NOT also counted as free stock. The `quantity` field on a child part record represents how many of that part are installed in the parent build. Top-level parts (parent_id IS NULL) with `status: "unused"` are the uninstalled stock pool; `free` equals their total quantity. `on_hand` includes both stock and installed components — it is the total you own. `allocated` is the portion installed in builds. A part row is either stock (top-level, unused) or an installed component (child of a build) — never both.
+**Important:** A part that is a child of a build (i.e., has a `parent_id` pointing to a craft) represents a component installed in that build — it is NOT also counted as free stock. The `quantity` field on a child part record represents how many of that part are installed in the parent build. Top-level parts (parent_id IS NULL) with `status: "unused"` are the stock pool; `on_hand` sums those. Installed components (children) are the allocation, not additional stock.
 
 ### 3.4 GET /api/parts
 
-Returns all parts (excluding gear), optionally filtered by type. Gear items (type: "gear") are excluded by default; use `/api/gear` (§3.7) for gear-specific fields (serial number, warranty). If you must query gear through this endpoint, pass `?type=gear`, but the response will not include gear-only fields — `/api/gear` is the recommended endpoint.
+Returns all parts, optionally filtered by type. Gear items (`type: "gear"`)
+are returned here for backward compatibility, but for gear-specific fields
+(serial_number, warranty_expiry, etc.) use `/api/gear` (§3.7) instead.
 
 **Query parameters:**
 

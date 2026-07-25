@@ -131,7 +131,7 @@ FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an
 │  │ or Hermes+Ollama    │    │                           │    │
 │  │                     │    │ Read by: Claude Code,     │    │
 │  │ Joins by: naming,  │    │ Hermes (natively)         │    │
-│  │ theme, link conv.   │    │                           │    │
+│  │ theme, link convs   │    │                           │    │
 │  └────────────────────┘    └──────────────────────────┘    │
 │                                                             │
 │  ┌──────────────────────────────────────────┐              │
@@ -221,8 +221,7 @@ GET /api/builds/:id/bom
   → [{ part_id, part_name, part_type, qty_in_build, role, on_hand, allocated, free }]
 
 GET /api/parts
-  → All parts EXCLUDING gear (optional ?type= filter)
-  → Gear is a separate concept: use /api/gear for serial/warranty fields
+  → All parts excluding gear (optional ?type= filter; gear via /api/gear)
   → [{ id, name, status, type, quantity, parent_id }]
 
 GET /api/parts/:id
@@ -230,7 +229,7 @@ GET /api/parts/:id
 
 GET /api/parts/:id/allocation
   → Where this part is allocated across all builds
-  → { part_id, part_name, on_hand, allocated: [{ build_id, build_name, qty }], free }
+  → { part_id, on_hand, allocated: [{ build_id, build_name, qty }], free }
 
 GET /api/gear
   → All gear items (discrete serial/warranty assets)
@@ -296,7 +295,7 @@ A containerized tool is in the federation iff:
 Skills and static sites join by convention, not by API:
 
 1. **One job.** Same as containerized tools.
-2. **Adopts naming conventions.** Consistent terminology. New containerized tools use the `fpvibe-*` prefix (e.g. `fpvibe-spots`); existing tools keep their current names (`flowchart`, `fpv-inventory`). Non-container members (skills, static sites, hardware) keep their existing names — the prefix convention applies to new deployable containers, not to skills or reference data.
+2. **Adopts naming conventions.** Consistent terminology. Containerized tools use the `fpvibe-*` prefix; non-container members (skills, static sites, hardware) keep their existing names — the prefix convention applies to deployable containers, not to skills or reference data.
 3. **Adopts theme tokens.** Uses the Multiboard-derived palette (§9) where applicable.
 4. **References entities by URL or ID.** A prop-pitch calculator references Part and Craft entities; the blackbox skill references Session entities.
 5. **Distributed via the plugin marketplace** (for skills) or GitHub Pages / Tipi nginx (for static tools).
@@ -498,7 +497,7 @@ Each tool uses similar CSS. No shared theme file required for n=1 — just use t
 1. Create `fpvibe/skills` (or `cori/fpv`) repo with `.claude-plugin/marketplace.json`
 2. Add betaflight-blackbox skill as the first marketplace entry
 3. Verify Hermes reads the marketplace manifest natively
-4. Acceptance: `hermes skills install fpvibe/betaflight-blackbox` (or equivalent) works; skill runs with local model via Ollama
+4. Acceptance: `hermes skills install fpvibe/blackbox` (or equivalent) works; skill runs with local model via Ollama
 
 ### Phase 7: Documentation reconciliation
 
