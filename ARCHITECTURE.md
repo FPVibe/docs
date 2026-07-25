@@ -294,7 +294,7 @@ A containerized tool is in the federation iff:
 Skills and static sites join by convention, not by API:
 
 1. **One job.** Same as containerized tools.
-2. **Adopts naming conventions.** Consistent terminology. Containerized tools use the `fpvibe-*` prefix; non-container members (skills, static sites, hardware) keep their existing names — the prefix convention applies to deployable containers, not to skills or reference data.
+2. **Adopts naming conventions.** Consistent terminology. New containerized tools use the `fpvibe-*` prefix (e.g. `fpvibe-spots`); existing tools keep their current names (`flowchart`, `fpv-inventory`). Non-container members (skills, static sites, hardware) keep their existing names — the prefix convention applies to new deployable containers, not to skills or reference data.
 3. **Adopts theme tokens.** Uses the Multiboard-derived palette (§9) where applicable.
 4. **References entities by URL or ID.** A prop-pitch calculator references Part and Craft entities; the blackbox skill references Session entities.
 5. **Distributed via the plugin marketplace** (for skills) or GitHub Pages / Tipi nginx (for static tools).

@@ -202,6 +202,8 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
 
 Parts are grouped by name+type to relate stock rows to installed rows. A single logical part (e.g. "0702 Motor") may have multiple rows: one or more top-level stock rows (`parent_id IS NULL`, `status: "unused"`) and one child row per build that installs it (`parent_id` pointing to the craft, `status: "in-use"`). The grouping key is `name + type`.
 
+**Grouping key constraint:** `name` is treated as a stable identifier within a type — parts are expected to use consistent naming across stock and installed rows (e.g. always "0702 Motor", not "0702 motor" or "0702Motor"). The spec does not enforce uniqueness of `name + type` across different vendors; if two vendors sell parts with the same name+type they will be merged into one allocation group. If disambiguation is needed, include vendor info in the name (e.g. "BetaFPV 0702 Motor"). Renaming a part breaks grouping — all rows in a group should use the same name string. Future versions may switch to a stable surrogate key if this proves fragile in practice.
+
 1. For each child part of the build, get `qty_in_build` from the child record's `quantity` field (how many of that part are installed in this build).
 2. `on_hand` = sum of `quantity` across all top-level stock rows (`parent_id IS NULL`, `status: "unused"`) in the same name+type group. This is the free stock pool for that part.
 3. `allocated` = sum of `qty_in_build` across ALL builds that install this part — i.e., the `quantity` of every child row whose `parent_id` points to a build and whose name+type matches this part. Each installed component row contributes its own `quantity` to the total.
