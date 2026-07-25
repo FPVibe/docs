@@ -7,7 +7,7 @@ Audience: implementing agents (Claude Code, opencode, Hermes) and future-Cori
 
 ## 1. TL;DR
 
-FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an independent Docker container with its own SQLite database and web UI. Tools integrate via lightweight JSON APIs — never via a shared database, shared filesystem, or shared git substrate.
+FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an independent Docker container with its own SQLite database and web UI. Tools integrate via lightweight JSON APIs — never via a shared database, shared filesystem, or shared git substrate. Non-container members (skills, static sites) join by adopting naming, theme, and link conventions.
 
 **The federation contract is an API schema, not a file format.**
 
@@ -17,6 +17,7 @@ FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an
 - Cross-tool calls are read-only, optional, and always degradable.
 - No tool writes to another tool's database. Ever.
 - No auth, no multi-tenancy. Local-only behind Runtipi's reverse proxy.
+- Skills and static sites join by convention (naming, theme, links), not by API.
 
 ---
 
@@ -31,65 +32,115 @@ FPVibe is a federation of single-purpose, self-hosted FPV tools. Each tool is an
 | Shared theme tokens file (`fpvibe-theme.css`) | Optional. Each tool uses similar CSS. No shared file required for n=1. |
 | Meta-compose orchestration | Per-tool Runtipi entries. No meta-compose needed. |
 | Conformance checklist with 8 gates | Simplified to 5 gates (§6). |
+| Blackbox skill not mentioned | Blackbox skill is a federation citizen (non-container) via plugin marketplace |
+| Gear packing lists not mentioned | Gear packing lists are a planned feature in the implementation plan |
 
 **What survived:** federation over monolith, promote-don't-pre-build, independent deployability, graceful degradation, one-job-per-tool.
 
 ---
 
-## 3. Current Repos and Maturity
+## 3. Current Repos, Tools, and Maturity
+
+### Containerized tools
 
 | Repo | Stack | Maturity | Database |
 |------|-------|----------|----------|
 | `FPVibe/flowchart` | Hono/Node + vanilla JS PWA | Working app, CI, multi-agent dev | SQLite (`better-sqlite3`) |
 | `FPVibe/fpv-inventory` | Deno + server-rendered HTML | Functional, basic | SQLite (Deno `sqlite`) |
+
+### Static tools (no server-side federation)
+
+| Repo | Stack | Maturity | Data |
+|------|-------|----------|------|
 | `FPVibe/fpv-tools` | Vanilla JS, static PWA | Mature, public on Pages | Client-side only (igow.db via sql.js, localStorage) |
 | `FPVibe/fpvibe.github.io` | — | Empty | — |
-| `FPVibe/docs` | — | This document | — |
 
-**flowchart** is the most mature: full JSON REST API, 25KB seed data, session/progress/tricks/equipment/denver/plans/export-import. Known gap: offline writes fail (ISSUE-offline-first.md).
+### Skills and non-container members
+
+| Artifact | Type | Maturity | Distribution |
+|----------|------|----------|-------------|
+| **betaflight-blackbox** | Claude Code / Hermes skill | Active, daily use | Plugin marketplace (`fpvibe/skills` or `cori/fpv`), `.claude-plugin/marketplace.json` — Hermes reads this natively |
+| **drone-mesh-mapper** | Hardware + firmware | Built, functional | Independent; tangential to federation. Could reference Spot entities via API if airspace-awareness features are added. |
+| **IGOW challenge archive** | Static dataset | Complete (144 entries, seasons 1–6) | Currently `igow/igow.db` in fpv-tools (client-side SQLite via sql.js). Maps to Training entity if training promotes to its own tool. |
+| **Gear packing lists** | Designed, not implemented | Architecture complete | Would live inside flowchart or inventory. Two bags (whoop, acro/long-range), composable session-type-based checklists, tier system (core/conditional/bench). |
+
+### Org infrastructure
+
+| Repo | Purpose |
+|------|---------|
+| `FPVibe/docs` | This document + API contract + historical specs |
+| `FPVibe/.github` | Org-level profile and defaults |
+
+**flowchart** is the most mature containerized tool: full JSON REST API, 25KB seed data, session/progress/tricks/equipment/denver/plans/export-import. Known gap: offline writes fail (ISSUE-offline-first.md).
 
 **fpv-inventory** is functional but has no JSON API — pure server-rendered HTML form POSTs. Hierarchical parts (parent_id = assemblies), status, quantity, type, specs, photos, full history log. README is still template boilerpaste.
 
-**fpv-tools** is a static PWA with three tools (CLI Merge, Rate Profile, IGOW Reference). Client-side only. Does not participate in server-side federation.
+**fpv-tools** is a static PWA with three tools (CLI Merge, Rate Profile, IGOW Reference). Client-side only. Does not participate in server-side federation. Can deploy dual: GitHub Pages for public reach, nginx container in Tipi for private-behind-Tailscale access. Same artifact does both.
+
+**betaflight-blackbox** is an active skill for decoding and analyzing Betaflight blackbox logs. Components: decode.sh, analyze.py, turtle-mode classifier, cell count auto-detection, per-session triage. Key capabilities: tune health checks, motor balance, voltage sag profiling, RPM/desync investigation, gyro noise/filter analysis, crash forensics, flight comparison. The skill is LLM-powered — a standalone deployment either loses the analysis or requires hosting an LLM endpoint, which is a non-starter. The skill stays where the model already is (Claude Code, or Hermes Agent with a local model via Ollama). Distribution: plugin marketplace repo (`fpvibe/skills` or `cori/fpv`) with `.claude-plugin/marketplace.json`, which both Claude Code and Hermes read natively. Competitive landscape: Betaflight's native Chirp Signal Generator (BF 2025.12+) and upcoming autotune analysis page narrow the differentiation window.
 
 ---
 
 ## 4. Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Runtipi (Docker, local-only, no auth)              │
-│                                                     │
-│  ┌──────────────┐       ┌──────────────────┐       │
-│  │ flowchart    │       │ fpv-inventory    │       │
-│  │ :3000        │       │ :8000            │       │
-│  │              │       │                  │       │
-│  │ SQLite:      │       │ SQLite:          │       │
-│  │  sessions    │       │  parts           │       │
-│  │  packs       │       │  part_history    │       │
-│  │  tricks      │       │                  │       │
-│  │  crashes     │       │ JSON API (add):  │       │
-│  │  reviews     │       │  GET /api/builds │       │
-│  │  equipment   │       │  GET /api/parts  │       │
-│  │              │       │                  │       │
-│  │ JSON API:    │  ───► │                  │       │
-│  │  GET /api/   │ fetch │                  │       │
-│  │  sessions    │ builds│                  │       │
-│  └──────────────┘       └──────────────────┘       │
-│         │                       │                  │
-│         │  optional reverse      │                  │
-│         │  (last flown)          │                  │
-│         ◄───────────────────────│                  │
-│                                                     │
-│  ┌──────────────────────────────────────────┐      │
-│  │ fpv-tools (static, GitHub Pages)         │      │
-│  │ Client-side only, no server federation   │      │
-│  └──────────────────────────────────────────┘      │
-│                                                     │
-│  Discovery: INVENTORY_URL / SESSIONS_URL env vars  │
-│  No shared database, no shared filesystem           │
-│  No auth, no multi-tenancy                          │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  Runtipi (Docker, local-only, no auth)                      │
+│                                                             │
+│  ┌──────────────┐       ┌──────────────────┐               │
+│  │ flowchart    │       │ fpv-inventory    │               │
+│  │ :3000        │       │ :8000            │               │
+│  │              │       │                  │               │
+│  │ SQLite:      │       │ SQLite:          │               │
+│  │  sessions    │       │  parts           │               │
+│  │  packs       │       │  part_history    │               │
+│  │  tricks      │       │  gear (add)      │               │
+│  │  crashes     │       │                  │               │
+│  │  reviews     │       │ JSON API (add):  │               │
+│  │  equipment   │       │  GET /api/builds │               │
+│  │              │       │  GET /api/parts  │               │
+│  │ JSON API:    │  ───► │  GET /api/gear   │               │
+│  │  GET /api/   │ fetch │  GET /api/stock  │               │
+│  │  sessions    │ builds│                  │               │
+│  └──────────────┘       └──────────────────┘               │
+│         │                       │                          │
+│         │  optional reverse      │                          │
+│         │  (last flown)          │                          │
+│         ◄───────────────────────│                          │
+│                                                             │
+│  ┌──────────────────────────────────────────┐              │
+│  │ fpv-tools (static)                       │              │
+│  │ GitHub Pages (public) and/or              │              │
+│  │ nginx container in Tipi (private)         │              │
+│  │ Client-side only, no server federation    │              │
+│  └──────────────────────────────────────────┘              │
+│                                                             │
+│  Discovery: INVENTORY_URL / SESSIONS_URL env vars          │
+│  No shared database, no shared filesystem                  │
+│  No auth, no multi-tenancy                                  │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│  Skills (non-container federation members)                  │
+│                                                             │
+│  ┌────────────────────┐    ┌──────────────────────────┐    │
+│  │ betaflight-blackbox │    │ Plugin marketplace repo  │    │
+│  │ (skill/MCP server)  │───││ fpvibe/skills or cori/fpv│    │
+│  │                     │    │ .claude-plugin/           │    │
+│  │ Runs in: Claude Code│    │   marketplace.json        │    │
+│  │ or Hermes+Ollama    │    │                           │    │
+│  │                     │    │ Read by: Claude Code,     │    │
+│  │ Joins by: naming,  │    │ Hermes (natively)         │    │
+│  │ theme, link convents │    │                           │    │
+│  └────────────────────┘    └──────────────────────────┘    │
+│                                                             │
+│  ┌──────────────────────────────────────────┐              │
+│  │ drone-mesh-mapper (tangential)            │              │
+│  │ Hardware: XIAO ESP32-S3 + Heltec LoRa V3  │              │
+│  │ Could reference Spot entities via API     │              │
+│  │ Independent lifecycle, not a citizen      │              │
+│  └──────────────────────────────────────────┘              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Data ownership
@@ -105,6 +156,7 @@ Each entity has exactly one authoritative owner. Other tools read via API; they 
 | Gear (discrete serial/warranty asset) | fpv-inventory | inventory |
 | Spot (flying location) | flowchart | flowchart (until promoted to own tool) |
 | Training plan / Drill | flowchart | flowchart (until promoted) |
+| Blackbox analysis | betaflight-blackbox skill | skill (not a database entity) |
 
 ### Graceful degradation
 
@@ -161,8 +213,12 @@ GET /api/builds
   → [{ id, name, status, type, quantity, specs, notes, photo_path }]
 
 GET /api/builds/:id
-  → Single build with its component tree
+  → Single build with its component tree (the BOM)
   → { id, name, status, ... , children: [{ id, name, type, quantity, status }] }
+
+GET /api/builds/:id/bom
+  → BOM with part details + computed allocation
+  → [{ part_id, part_name, qty, role, on_hand, allocated, free }]
 
 GET /api/parts
   → All parts (optional ?type= filter)
@@ -170,10 +226,24 @@ GET /api/parts
 
 GET /api/parts/:id
   → Single part with history
-  → { id, name, status, type, quantity, specs, notes, photo_path, parent_id, history: [...] }
+
+GET /api/parts/:id/allocation
+  → Where this part is allocated across all builds
+  → { part_id, on_hand, allocated: [{ build_id, build_name, qty }], free }
+
+GET /api/gear
+  → All gear items (discrete serial/warranty assets)
+  → [{ id, name, type, serial_number, warranty_expiry, purchase_date, ... }]
+
+GET /api/gear/:id
+  → Single gear item with full details
+
+GET /api/stock
+  → Aggregated stock by type/status across all parts
+  → [{ type, status, total_quantity, ... }]
 
 GET /api/health
-  → { status: "ok", version: "x.y.z" }
+  → { status: "ok", version: "x.y.z", name: "fpv-inventory" }
 ```
 
 **flowchart already has:**
@@ -187,7 +257,7 @@ GET /api/sessions/:id
   → Full session with packs, tricks, crashes, review
 
 GET /api/health
-  → { status: "ok", version: "x.y.z" }
+  → { status: "ok", version: "x.y.z", name: "flowchart" }
 ```
 
 ### 5.3 Link convention
@@ -210,15 +280,27 @@ No automated compatibility checking. For n=1, breakage is caught when you use it
 
 ## 6. Conformance — what makes a tool an FPVibe citizen
 
-A tool is in the federation iff:
+### Containerized tools
+
+A containerized tool is in the federation iff:
 
 1. **One job.** Doing two things → it's two tools.
 2. **Owns its data.** SQLite in its container. No shared database, no shared filesystem.
-3. **Exposes a JSON read API** for entities other tools reference. (Stateless tools like fpv-tools: exempt.)
+3. **Exposes a JSON read API** for entities other tools reference.
 4. **Degrades gracefully** when siblings are down. Core function never depends on a sibling being reachable.
 5. **Docker + Runtipi-compatible.** Single container, single port, non-root (UID 1000), `/api/health` endpoint, env-configured, volume for `/data`.
 
-Optional but recommended: mobile-responsive, dark theme, PWA installable.
+### Non-container members (skills, static sites)
+
+Skills and static sites join by convention, not by API:
+
+1. **One job.** Same as containerized tools.
+2. **Adopts naming conventions.** `fpvibe-*` prefix, consistent terminology.
+3. **Adopts theme tokens.** Uses the Multiboard-derived palette (§9) where applicable.
+4. **References entities by URL or ID.** A prop-pitch calculator references Part and Craft entities; the blackbox skill references Session entities.
+5. **Distributed via the plugin marketplace** (for skills) or GitHub Pages / Tipi nginx (for static tools).
+
+Optional but recommended for all members: mobile-responsive, dark theme, PWA installable.
 
 ---
 
@@ -252,6 +334,32 @@ A flyable aircraft. In inventory, it's a top-level part (parent_id IS NULL) with
 
 An inventory item — component, spare, or consumable. Same `parts` table, just not type = "craft" or not top-level.
 
+**The Part/Gear boundary is fungible-vs-discrete.** A bag of props is Parts (fungible quantity); your goggles are Gear (discrete, serial-numbered, warranty-bearing). DIY accessories are Parts unless they grow a serial/warranty you actually track.
+
+### Gear
+
+A discrete, serial/warranty-bearing asset — commercial craft, radios, goggles, the printer, the CNC. This is the DumbAssets-shaped slice. Gear is richer than a Part: it carries serial number, warranty expiry, purchase date, and optionally purchase price.
+
+```json
+{
+  "id": 4,
+  "name": "DJI Goggles N3",
+  "type": "gear",
+  "status": "in-use",
+  "quantity": 1,
+  "serial_number": "SN-XXXXXXX",
+  "warranty_expiry": "2027-03-15",
+  "purchase_date": "2026-03-15",
+  "purchase_price": 549.00,
+  "specs": "O4 receiver, 1080p display",
+  "notes": "",
+  "photo_path": null,
+  "parent_id": null
+}
+```
+
+Gear may keep a private JSON store for warranty tracking, but the canonical record is in the SQLite database, accessible via the JSON API.
+
 ### Session
 
 A flight outing. Owned by flowchart.
@@ -278,7 +386,7 @@ A flying location. Currently a `location` enum in flowchart's session table. Pro
 
 ### Training plan / Drill
 
-Structured practice. Currently trick/drill seed data in flowchart. Promotes to its own tool only when progress tracking needs real structure.
+Structured practice. Currently trick/drill seed data in flowchart. The IGOW challenge archive (144 entries, seasons 1–6, currently a static SQLite file in fpv-tools) maps to this entity. If training promotes to its own tool, the IGOW data could move from client-side `igow.db` into the training tool's database. Until then, it stays as static reference data in fpv-tools.
 
 ---
 
@@ -287,13 +395,15 @@ Structured practice. Currently trick/drill seed data in flowchart. Promotes to i
 Spots and training start as fields/tables inside flowchart. Promote to their own citizens only when a concrete trigger fires:
 
 - **Spot → fpvibe-spots:** when airspace/compliance metadata (LAANC, IAA/MySRS registration, EU constraints) outgrows a `location` enum field and wants real structure/validation.
-- **Training → fpvibe-training:** when drills need genuine progress tracking, streaks, or scheduling rather than a reference checklist.
+- **Training → fpvibe-training:** when drills need genuine progress tracking, streaks, or scheduling rather than a reference checklist. The IGOW archive (144 entries) would migrate from fpv-tools' client-side `igow.db` into the training tool's database at this point.
 
 Promotion is cheap: add `SPOTS_URL` env var, stand up the new container, migrate the data. Existing sessions still reference the old location enum; new sessions can use the API. No link migration needed because there's no URN scheme — just update the env var.
 
 ---
 
-## 9. Deploy shape (per tool)
+## 9. Deploy and look
+
+### Deploy shape (per containerized tool)
 
 ```
 Dockerfile:
@@ -313,42 +423,33 @@ Runtipi:
   - no_auth: true
 ```
 
-### flowchart docker-compose.yml (current, add INVENTORY_URL)
+### Static tools (fpv-tools)
 
-```yaml
-services:
-  flowchart:
-    build: .
-    container_name: flowchart
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT:-3000}:3000"
-    volumes:
-      - ${APP_DATA_DIR:-./data}:/app/data
-    environment:
-      - NODE_ENV=production
-      - DB_PATH=/app/data/flowchart.db
-      - INVENTORY_URL=${INVENTORY_URL:-}
-```
+fpv-tools deploys dual:
+- **GitHub Pages** for public reach (current: `cori.github.io/fpv-tools`, planned: `fpvibe.github.io`)
+- **nginx container in Tipi** for private-behind-Tailscale access (optional, same artifact)
 
-### fpv-inventory docker-compose.yml (updated)
+The same build artifact serves both. No server-side federation; client-side only.
 
-```yaml
-services:
-  fpv-inventory:
-    build: .
-    container_name: fpv-inventory
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT:-8000}:8000"
-    volumes:
-      - ${APP_DATA_DIR:-./data}:/data
-    environment:
-      - DB_PATH=/data/fpv-inventory.db
-      - PHOTOS_DIR=/data/photos
-      - PORT=8000
-      - SESSIONS_URL=${SESSIONS_URL:-}
-```
+### Skills (betaflight-blackbox)
+
+Distributed via plugin marketplace repo (`fpvibe/skills` or `cori/fpv`):
+- `.claude-plugin/marketplace.json` manifest
+- Read natively by both Claude Code and Hermes Agent
+- Hermes is model-agnostic → skill can run with a local model via Ollama
+- The "I won't host an LLM" blocker becomes a quality question: is a local model sharp enough for tune analysis?
+
+### Look and theme
+
+Recommended palette seeded from Cori's Multiboard physical bench scheme:
+
+| Token | Hex | Role |
+|-------|-----|------|
+| primary | `#9ecae1` | Light blue |
+| secondary | `#9e7bb5` | Purple |
+| accent | `#f08a3c` | Tangerine |
+
+Each tool uses similar CSS. No shared theme file required for n=1 — just use the same hex values. Light/dark with persisted preference. Dark theme default (FPV pilots are used to dark UIs from Betaflight/goggles).
 
 ---
 
@@ -357,8 +458,9 @@ services:
 ### Phase 1: Inventory JSON API (unblocks federation)
 
 1. Add JSON API routes to fpv-inventory alongside existing HTML routes
-2. Add `GET /api/builds`, `GET /api/builds/:id`, `GET /api/parts`, `GET /api/parts/:id`, `GET /api/health`
-3. Acceptance: `curl http://localhost:8000/api/builds` returns JSON array
+2. Add `GET /api/builds`, `GET /api/builds/:id`, `GET /api/builds/:id/bom`, `GET /api/parts`, `GET /api/parts/:id`, `GET /api/parts/:id/allocation`, `GET /api/gear`, `GET /api/gear/:id`, `GET /api/stock`, `GET /api/health`
+3. Add Gear as a richer entity (serial_number, warranty_expiry, purchase_date, purchase_price fields)
+4. Acceptance: `curl http://localhost:8000/api/builds` returns JSON array; `curl http://localhost:8000/api/stock` returns aggregated quantities
 
 ### Phase 2: flowchart federation client
 
@@ -376,17 +478,34 @@ services:
 
 ### Phase 4: Inventory features (user-requested)
 
-1. Stock check view: aggregate quantities by type/status across all parts
-2. Repair plan entity: link a broken part to needed replacement parts + status tracking
-3. From-the-bin builds: guided assembly flow — pick components from inventory, create a new craft with those parts as children
-4. Acceptance: stock check shows "motors: 12 on hand, 4 allocated"; repair plan links broken motor to replacement; from-the-bin creates a new craft in inventory
+1. **Stock check view:** aggregate quantities by type/status across all parts (uses `GET /api/stock`)
+2. **Repair plan entity:** link a broken part to needed replacement parts + status tracking
+3. **From-the-bin builds:** guided assembly flow — pick components from inventory, create a new craft with those parts as children
+4. **Allocation mechanic:** inventory computes on-hand/allocated/free by reading its own parts + their parent-child relationships (children ARE the BOM). Report `on hand / allocated / free` per part.
+5. Acceptance: stock check shows "motors: 12 on hand, 4 allocated"; repair plan links broken motor to replacement; from-the-bin creates a new craft in inventory
 
-### Phase 5: Documentation reconciliation
+### Phase 5: Gear packing lists
 
-1. Replace FPVIBE.md v0.3 with this ARCHITECTURE.md in docs repo
-2. Update fpvibe-context.md to reflect actual repo state (org exists, repos transferred, fpv-inventory has JSON API)
+1. Implement the designed gear packing architecture: `gear/` directory of component files, `sessions/` directory of profiles that compose lists from components, `bin/pack` generator that flattens a session profile into a tickbox checklist
+2. Two bags: whoop bag (1S analog, indoor/micro) and acro/long-range bag (5" freestyle, 3", LR)
+3. Each item carries a justification field and a tier (core, conditional, bench)
+4. Lives inside flowchart or inventory (decision: which tool owns packing lists?)
+5. Acceptance: packing list generates a tickbox checklist for a given session type
+
+### Phase 6: Plugin marketplace + blackbox skill
+
+1. Create `fpvibe/skills` (or `cori/fpv`) repo with `.claude-plugin/marketplace.json`
+2. Add betaflight-blackbox skill as the first marketplace entry
+3. Verify Hermes reads the marketplace manifest natively
+4. Acceptance: `hermes skills install fpvibe/blackbox` (or equivalent) works; skill runs with local model via Ollama
+
+### Phase 7: Documentation reconciliation
+
+1. Replace FPVIBE.md v0.3 with this ARCHITECTURE.md in docs repo (this PR)
+2. Update fpvibe-context.md to reflect actual repo state (org exists, repos transferred, fpv-inventory has JSON API, blackbox skill is a citizen, gear packing lists are planned)
 3. Fix fpv-inventory README (still template boilerpaste)
-4. Migrate fpv-tools from cori.github.io to fpvibe.github.io
+4. Migrate fpv-tools from `cori.github.io/fpv-tools` to `fpvibe.github.io`
+5. Fold in the inventory collation doc's source thread provenance
 
 ---
 
@@ -401,6 +520,7 @@ services:
 - **No hard runtime dependencies.** Each tool boots and functions standalone. Federation is opt-in via env vars.
 - **Keep tools single-job.** If one grows a second job, split it.
 - **When in doubt, ship a small tool — not a bigger one.**
+- **Skills don't need containers.** The blackbox skill joins by convention, not by deployment. Don't force a container where a skill suffices.
 
 ---
 
@@ -408,10 +528,14 @@ services:
 
 1. **Does flowchart's `equipment` table go away, or does it become session-event-only?** Inventory owns "what exists"; flowchart should own "what happened during a session." The equipment_log table (which already links to session_id) might become the canonical equipment-event record, while inventory owns the part itself. Decide before Phase 2.
 
-2. **Gear (discrete serial/warranty assets):** Does inventory's `type` enum get a `gear` type, or does gear stay as a separate concept? Currently inventory has `type: "craft"` but no `gear` type. Add one, or keep gear as a top-level part with a `is_gear` flag?
+2. **Gear: add `gear` type to enum or `is_gear` flag?** The collation doc recommends: commercial / serial-warranty-bearing only to start. DIY accessories are fungible → they're Parts. Promote an accessory to Gear only if it grows a serial/warranty you actually track. This keeps the Part/Gear line crisp. (Recommendation: add `gear` type to the enum. Gear gets its own response shape with serial/warranty fields.)
 
-3. **Tune profiles:** Where do Betaflight tune/rate profiles live? In inventory (as a field on a craft), in flowchart (as a session reference), or in a future fpvibe-tune tool? For now, tune data is in fpv-tools' rate-profile localStorage. No server-side home yet.
+3. **Tune profiles:** Where do Betaflight tune/rate profiles live? In inventory (as a field on a craft), in flowchart (as a session reference), or in a future fpvibe-tune tool? For now, tune data is in fpv-tools' rate-profile localStorage. No server-side home yet. The blackbox skill can reference tune data during analysis but doesn't store it.
 
 4. **fpv-tools → fpvibe.github.io migration:** The org Pages repo exists but is empty. fpv-tools still deploys to `cori.github.io/fpv-tools`. Worth migrating for namespace consistency, but breaks existing bookmarks/links.
 
-5. **IGOW reference data:** Currently a static SQLite file in fpv-tools (`igow/igow.db`). If training promotes to its own tool, should this data move into flowchart's drill table, or stay client-side? Probably stay client-side — it's reference data, not session data.
+5. **IGOW reference data:** Currently a static SQLite file in fpv-tools (`igow/igow.db`). If training promotes to its own tool, should this data move into the training tool's database, or stay client-side? Recommendation: stay client-side until training promotes — it's reference data, not session data.
+
+6. **Gear packing lists: flowchart or inventory?** The designed architecture uses Gear and Session entities. Gear lives in inventory; sessions live in flowchart. The packing list composes from both. Which tool owns the packing list UI? Recommendation: flowchart, since packing is session-type-driven and flowchart owns sessions.
+
+7. **Plugin marketplace repo name:** `fpvibe/skills` (org-level, consistent with other repos) vs `cori/fpv` (personal, established). Recommendation: `fpvibe/skills` for namespace consistency.

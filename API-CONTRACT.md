@@ -166,7 +166,50 @@ Returns a single build with its component tree (one level deep — the BOM).
 { "error": "Build not found" }
 ```
 
-### 3.3 GET /api/parts
+### 3.3 GET /api/builds/:id/bom
+
+Returns the BOM for a build with part details and computed allocation. This is
+the allocation mechanic: inventory reads its own parts and their parent-child
+relationships (children ARE the BOM) to compute on-hand/allocated/free.
+
+**Response (200):**
+```json
+[
+  {
+    "part_id": 8,
+    "part_name": "0702 Motor",
+    "part_type": "motor",
+    "qty_in_build": 4,
+    "role": "motors",
+    "on_hand": 12,
+    "allocated": 4,
+    "free": 8
+  },
+  {
+    "part_id": 12,
+    "part_name": "BetaFPV F4 1S AIO",
+    "part_type": "fc",
+    "qty_in_build": 1,
+    "role": "fc-aio",
+    "on_hand": 2,
+    "allocated": 1,
+    "free": 1
+  }
+]
+```
+
+**How allocation is computed:**
+
+1. For each child part of the build, get `qty_in_build` from the child record's `quantity` field.
+2. `on_hand` = total quantity of that part across all inventory (sum of all parts with the same name+type, or the part's own quantity if it's a single record).
+3. `allocated` = sum of `qty_in_build` across ALL builds that reference this part as a child.
+4. `free` = `on_hand` - `allocated`.
+
+This is the same mechanic described in the original spec ("inventory reads every
+craft's BOM and subtracts from on-hand") but implemented via the inventory's own
+database — no cross-tool file reading required.
+
+### 3.4 GET /api/parts
 
 Returns all parts, optionally filtered by type.
 
@@ -174,7 +217,7 @@ Returns all parts, optionally filtered by type.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `type` | string | Filter by type: `motor`, `fc`, `esc`, `vtx`, `frame`, `camera`, `antenna`, `battery`, `craft`, `other` |
+| `type` | string | Filter by type: `motor`, `fc`, `esc`, `vtx`, `frame`, `camera`, `antenna`, `battery`, `craft`, `gear`, `other` |
 | `status` | string | Filter by status |
 | `parent_id` | integer | Filter by parent (0 = top-level only) |
 | `q` | string | Case-insensitive name search |
@@ -196,7 +239,7 @@ Returns all parts, optionally filtered by type.
 ]
 ```
 
-### 3.4 GET /api/parts/:id
+### 3.5 GET /api/parts/:id
 
 Returns a single part with its history.
 
@@ -241,6 +284,153 @@ Returns a single part with its history.
     }
   ]
 }
+```
+
+### 3.6 GET /api/parts/:id/allocation
+
+Returns where a specific part is allocated across all builds. This is the
+reverse view of the BOM: "I have this part — where is it used?"
+
+**Response (200):**
+```json
+{
+  "part_id": 8,
+  "part_name": "0702 Motor",
+  "on_hand": 12,
+  "allocated": [
+    {
+      "build_id": 5,
+      "build_name": "LionBee",
+      "qty": 4
+    },
+    {
+      "build_id": 7,
+      "build_name": "Air65III",
+      "qty": 4
+    }
+  ],
+  "free": 4
+}
+```
+
+**404 when part not found:**
+```json
+{ "error": "Part not found" }
+```
+
+### 3.7 GET /api/gear
+
+Returns all gear items (discrete serial/warranty assets). Gear is the
+DumbAssets-shaped slice — distinct from Parts by the fungible-vs-discrete
+boundary. A bag of props is Parts; your goggles are Gear.
+
+**Query parameters:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `status` | string | Filter by status |
+| `q` | string | Case-insensitive name search |
+
+**Response (200):**
+```json
+[
+  {
+    "id": 4,
+    "name": "DJI Goggles N3",
+    "type": "gear",
+    "status": "in-use",
+    "quantity": 1,
+    "serial_number": "SN-XXXXXXX",
+    "warranty_expiry": "2027-03-15",
+    "purchase_date": "2026-03-15",
+    "purchase_price": 549.00,
+    "specs": "O4 receiver, 1080p display",
+    "notes": "",
+    "photo_path": null,
+    "parent_id": null
+  }
+]
+```
+
+**Empty array when no gear exists.** Not an error.
+
+### 3.8 GET /api/gear/:id
+
+Returns a single gear item with full details.
+
+**Response (200):**
+```json
+{
+  "id": 4,
+  "name": "DJI Goggles N3",
+  "type": "gear",
+  "status": "in-use",
+  "quantity": 1,
+  "serial_number": "SN-XXXXXXX",
+  "warranty_expiry": "2027-03-15",
+  "purchase_date": "2026-03-15",
+  "purchase_price": 549.00,
+  "specs": "O4 receiver, 1080p display",
+  "notes": "",
+  "photo_path": null,
+  "parent_id": null,
+  "created_at": "2026-03-15 12:00:00",
+  "updated_at": "2026-07-01 09:00:00",
+  "history": [
+    {
+      "id": 1,
+      "part_id": 4,
+      "action": "created",
+      "from_parent_id": null,
+      "to_parent_id": null,
+      "old_status": null,
+      "new_status": null,
+      "quantity_delta": null,
+      "notes": "Purchased from GetFPV",
+      "created_at": "2026-03-15 12:00:00"
+    }
+  ]
+}
+```
+
+**404 when gear not found:**
+```json
+{ "error": "Gear not found" }
+```
+
+### 3.9 GET /api/stock
+
+Returns aggregated stock by type/status across all parts. This powers the
+stock-check view.
+
+**Response (200):**
+```json
+[
+  {
+    "type": "motor",
+    "status": "in-use",
+    "total_quantity": 8,
+    "count": 2
+  },
+  {
+    "type": "motor",
+    "status": "unused",
+    "total_quantity": 12,
+    "count": 3
+  },
+  {
+    "type": "fc",
+    "status": "in-use",
+    "total_quantity": 2,
+    "count": 2
+  },
+  {
+    "type": "battery",
+    "status": "in-use",
+    "total_quantity": 6,
+    "count": 6
+  }
+]
 ```
 
 ---
@@ -528,17 +718,24 @@ updates. Breaking changes are noted in the changelog.
    `craft_inventory_id` (integer, nullable) to the POST body is the natural
    extension. This is in the Phase 2 implementation scope.
 
-2. **Should inventory expose stock-check aggregation via API?**
-   `GET /api/stock` could return quantities aggregated by type/status. This
-   would let flowchart show "motors: 12 available" when creating a session.
-   Likely a Phase 4 addition.
-
-3. **Should inventory expose a "create build from components" endpoint?**
+2. **Should inventory expose a "create build from components" endpoint?**
    `POST /api/builds` accepting a name + array of part IDs to assemble as
    children. This supports the "from-the-bin builds" feature. Needs design
    — it's the first cross-tool write concern, but it stays within inventory
    (inventory writes to its own DB; flowchart just calls the API).
 
-4. **Should there be a unified search across tools?**
+3. **Should there be a unified search across tools?**
    `GET /api/search?q=power+loop` across sessions, builds, tricks? Probably
    not worth it for n=1. Each tool's own search is sufficient.
+
+4. **Should the blackbox skill expose an API?**
+   The skill runs inside Claude Code / Hermes, not as a server. But it could
+   expose an MCP server with `decode`, `analyze`, `compare` as callable tools.
+   This would let flowchart or inventory trigger blackbox analysis via MCP
+   rather than requiring the user to invoke the skill manually. Likely a
+   future enhancement, not a Phase 1 concern.
+
+5. **Should gear packing lists be exposed via API?**
+   If packing lists live in flowchart, they'd be `GET /api/packing-lists?session_type=whoop`.
+   If they live in inventory, they'd be under inventory's API. Depends on
+   decision #6 in ARCHITECTURE.md (which tool owns packing lists).
