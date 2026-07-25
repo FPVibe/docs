@@ -94,35 +94,35 @@ are filed.
 
 | Plan ID | Repo | Title | Phase | Depends on | Issue |
 |---------|------|-------|-------|------------|-------|
-| DOCS-1 | docs | Record adopted decisions in ARCHITECTURE/API-CONTRACT; add CHANGELOG | — | — | — |
-| DOCS-2 | docs | Conformance check script + federation smoke compose | — | — | — |
-| INV-1 | fpv-inventory | Gear schema migration (`gear` type + 4 columns) | 1 | — | — |
-| INV-2 | fpv-inventory | JSON API scaffolding + `GET /api/health` | 1 | — | — |
-| INV-3 | fpv-inventory | `GET /api/parts`, `GET /api/parts/:id` | 1 | INV-1, INV-2 | — |
-| INV-4 | fpv-inventory | `GET /api/builds`, `GET /api/builds/:id` | 1 | INV-2 | — |
-| INV-5 | fpv-inventory | Allocation engine + `/bom` + `/allocation` | 1, 4 | INV-4 | — |
-| INV-6 | fpv-inventory | `GET /api/gear`, `GET /api/gear/:id` | 1 | INV-1, INV-2 | — |
-| INV-7 | fpv-inventory | `GET /api/stock` | 1, 4 | INV-2 | — |
-| INV-8 | fpv-inventory | Gear UI (create/edit serial+warranty fields) | 1 | INV-1 | — |
-| FLOW-1 | flowchart | Test harness bootstrap (node:test, exported app) | 2 | — | — |
-| FLOW-2 | flowchart | `craft_inventory_id` + session query params + health `name` | 2 | FLOW-1 | — |
-| FLOW-3 | flowchart | Federation proxy: `/api/federation/builds` + `/config` | 2 | FLOW-1, INV-4 | — |
-| FLOW-4 | flowchart | Craft dropdown with degradation (fetch → cache → fallback) | 2 | FLOW-2, FLOW-3 | — |
-| FLOW-5 | flowchart | Cross-tool links via `INVENTORY_PUBLIC_URL` | 2 | FLOW-4 | — |
-| INV-9 | fpv-inventory | "Last flown" on build detail via `SESSIONS_URL` | 3 | INV-4, FLOW-2 | — |
-| INV-10 | fpv-inventory | Stock check view (UI) | 4 | INV-7 | — |
-| INV-11 | fpv-inventory | Allocation surfacing in part/build UI | 4 | INV-5 | — |
-| INV-12 | fpv-inventory | Repair plan entity + UI | 4 | INV-1 | — |
-| INV-13 | fpv-inventory | From-the-bin guided build flow | 4 | INV-5 | — |
-| INV-14 | fpv-inventory | Runtipi/Docker conformance + README rewrite | 5-gate, 7 | INV-2 | — |
-| FLOW-6 | flowchart | Packing list schema + API | 5 | FLOW-1 | — |
-| FLOW-7 | flowchart | Packing list seed data + checklist UI | 5 | FLOW-6 | — |
-| FLOW-8 | flowchart | Federation env plumbing + docs hygiene | 2, 7 | FLOW-5 | — |
-| DOCS-4 | docs | Create `FPVibe/skills` marketplace + blackbox skill entry | 6 | — | — |
-| DOCS-3 | docs | Refresh fpvibe-context.md + provenance | 7 | — | — |
-| DOCS-5 | docs | `fpvibe.github.io` org landing page | 7 | — | — |
-| TOOLS-1 | fpv-tools | Pages migration to `fpvibe.github.io/fpv-tools` | 7 | — | — |
-| TOOLS-2 | fpv-tools | Optional: nginx-in-Tipi dual deploy | backlog | TOOLS-1 | — |
+| DOCS-1 | docs | Record adopted decisions in ARCHITECTURE/API-CONTRACT; add CHANGELOG | — | — | [docs#5](https://github.com/FPVibe/docs/issues/5) |
+| DOCS-2 | docs | Conformance check script + federation smoke compose | — | — | [docs#6](https://github.com/FPVibe/docs/issues/6) |
+| INV-1 | fpv-inventory | Gear schema migration (`gear` type + 4 columns) | 1 | — | [fpv-inventory#37](https://github.com/FPVibe/fpv-inventory/issues/37) |
+| INV-2 | fpv-inventory | JSON API scaffolding + `GET /api/health` | 1 | — | [fpv-inventory#38](https://github.com/FPVibe/fpv-inventory/issues/38) |
+| INV-3 | fpv-inventory | `GET /api/parts`, `GET /api/parts/:id` | 1 | INV-1, INV-2 | [fpv-inventory#39](https://github.com/FPVibe/fpv-inventory/issues/39) |
+| INV-4 | fpv-inventory | `GET /api/builds`, `GET /api/builds/:id` | 1 | INV-2 | [fpv-inventory#40](https://github.com/FPVibe/fpv-inventory/issues/40) |
+| INV-5 | fpv-inventory | Allocation engine + `/bom` + `/allocation` | 1, 4 | INV-4 | [fpv-inventory#41](https://github.com/FPVibe/fpv-inventory/issues/41) |
+| INV-6 | fpv-inventory | `GET /api/gear`, `GET /api/gear/:id` | 1 | INV-1, INV-2 | [fpv-inventory#42](https://github.com/FPVibe/fpv-inventory/issues/42) |
+| INV-7 | fpv-inventory | `GET /api/stock` | 1, 4 | INV-2 | [fpv-inventory#43](https://github.com/FPVibe/fpv-inventory/issues/43) |
+| INV-8 | fpv-inventory | Gear UI (create/edit serial+warranty fields) | 1 | INV-1 | [fpv-inventory#44](https://github.com/FPVibe/fpv-inventory/issues/44) |
+| FLOW-1 | flowchart | Test harness bootstrap (node:test, exported app) | 2 | — | [flowchart#28](https://github.com/FPVibe/flowchart/issues/28) |
+| FLOW-2 | flowchart | `craft_inventory_id` + session query params + health `name` | 2 | FLOW-1 | [flowchart#29](https://github.com/FPVibe/flowchart/issues/29) |
+| FLOW-3 | flowchart | Federation proxy: `/api/federation/builds` + `/config` | 2 | FLOW-1, INV-4 | [flowchart#30](https://github.com/FPVibe/flowchart/issues/30) |
+| FLOW-4 | flowchart | Craft dropdown with degradation (fetch → cache → fallback) | 2 | FLOW-2, FLOW-3 | [flowchart#31](https://github.com/FPVibe/flowchart/issues/31) |
+| FLOW-5 | flowchart | Cross-tool links via `INVENTORY_PUBLIC_URL` | 2 | FLOW-4 | [flowchart#32](https://github.com/FPVibe/flowchart/issues/32) |
+| INV-9 | fpv-inventory | "Last flown" on build detail via `SESSIONS_URL` | 3 | INV-4, FLOW-2 | [fpv-inventory#45](https://github.com/FPVibe/fpv-inventory/issues/45) |
+| INV-10 | fpv-inventory | Stock check view (UI) | 4 | INV-7 | [fpv-inventory#46](https://github.com/FPVibe/fpv-inventory/issues/46) |
+| INV-11 | fpv-inventory | Allocation surfacing in part/build UI | 4 | INV-5 | [fpv-inventory#47](https://github.com/FPVibe/fpv-inventory/issues/47) |
+| INV-12 | fpv-inventory | Repair plan entity + UI | 4 | INV-1 | [fpv-inventory#48](https://github.com/FPVibe/fpv-inventory/issues/48) |
+| INV-13 | fpv-inventory | From-the-bin guided build flow | 4 | INV-5 | [fpv-inventory#49](https://github.com/FPVibe/fpv-inventory/issues/49) |
+| INV-14 | fpv-inventory | Runtipi/Docker conformance + README rewrite | 5-gate, 7 | INV-2 | [fpv-inventory#50](https://github.com/FPVibe/fpv-inventory/issues/50) |
+| FLOW-6 | flowchart | Packing list schema + API | 5 | FLOW-1 | [flowchart#33](https://github.com/FPVibe/flowchart/issues/33) |
+| FLOW-7 | flowchart | Packing list seed data + checklist UI | 5 | FLOW-6 | [flowchart#34](https://github.com/FPVibe/flowchart/issues/34) |
+| FLOW-8 | flowchart | Federation env plumbing + docs hygiene | 2, 7 | FLOW-5 | [flowchart#35](https://github.com/FPVibe/flowchart/issues/35) |
+| DOCS-4 | docs | Create `FPVibe/skills` marketplace + blackbox skill entry | 6 | — | [docs#8](https://github.com/FPVibe/docs/issues/8) |
+| DOCS-3 | docs | Refresh fpvibe-context.md + provenance | 7 | — | [docs#7](https://github.com/FPVibe/docs/issues/7) |
+| DOCS-5 | docs | `fpvibe.github.io` org landing page | 7 | — | [docs#9](https://github.com/FPVibe/docs/issues/9) |
+| TOOLS-1 | fpv-tools | Pages migration to `fpvibe.github.io/fpv-tools` | 7 | — | [fpv-tools#24](https://github.com/FPVibe/fpv-tools/issues/24) |
+| TOOLS-2 | fpv-tools | Optional: nginx-in-Tipi dual deploy | backlog | TOOLS-1 | [fpv-tools#25](https://github.com/FPVibe/fpv-tools/issues/25) |
 
 ### Dependency graph
 
@@ -1224,9 +1224,10 @@ made executable. All use DOCS-2's tooling.
 
 ## 6. Tracking
 
-- **Master tracking issue:** filed in `FPVibe/docs` with a phase-ordered
-  checklist of every issue above — the single place to see live status and
-  pick the next unblocked task (per §1.2).
+- **Master tracking issue:**
+  [FPVibe/docs#10](https://github.com/FPVibe/docs/issues/10) — a
+  phase-ordered checklist of every issue above; the single place to see live
+  status and pick the next unblocked task (per §1.2).
 - This document is updated only when scope/specs change (via PR), not for
   status. Status lives on the issues.
 
