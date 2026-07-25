@@ -317,7 +317,7 @@ reverse view of the BOM: "I have this part — where is it used?"
 Each build that installs the part appears as one entry in `allocated`. (In this
 example dataset only LionBee installs the 0702 Motor — Air65III runs 0802 motors,
 per §3.1 — so `allocated` has one entry and the totals match §3.3: `on_hand` 12,
-allocated 4, `free` 8.)
+`allocated` 4, `free` 8.)
 
 **404 when part not found:**
 ```json
@@ -602,6 +602,10 @@ above. The `GET /api/sessions/:id` response includes it too.
 // from a tiny /api/config endpoint. How it's exposed, and whether the browser
 // can reach the Docker-internal hostname at all, is open question §7.7.
 
+declare global {
+  interface Window { FPVIBE_CONFIG?: { INVENTORY_URL?: string } }
+}
+
 const INVENTORY_URL = window.FPVIBE_CONFIG?.INVENTORY_URL ?? "";
 
 async function fetchBuilds(): Promise<Build[] | null> {
@@ -769,7 +773,8 @@ updates. Breaking changes are noted in the changelog.
    (it uses localStorage), and the ARCHITECTURE.md §5.3 cross-tool links are
    clicked in a browser. Either (a) each tool's server proxies cross-tool reads
    and rendered links use browser-reachable (Runtipi/tailnet) hostnames, or
-   (b) tools serve CORS headers (`Access-Control-Allow-Origin: *` is acceptable
-   with no auth, local-only) and env config splits into internal vs
-   browser-facing base URLs. Decide before Phase 2 — it dictates where the
-   degradation logic lives.
+   (b) tools serve CORS headers and env config splits into internal vs
+   browser-facing base URLs — prefer an explicit allowlist of sibling origins
+   over `Access-Control-Allow-Origin: *`, since with no auth a wildcard would
+   let any website the user's browser visits read these local APIs. Decide
+   before Phase 2 — it dictates where the degradation logic lives.
