@@ -84,7 +84,7 @@ Every FPVibe repo runs its checks in GitHub Actions on every push and PR —
 | Repo | Workflow | Runs | Gap |
 |------|----------|------|-----|
 | fpv-inventory | `ci.yml` | `deno test --allow-all` | — |
-| flowchart | `ci.yml` | bash smoke tests; FLOW-1 adds `npm test` before them | unit tests until FLOW-1 lands |
+| flowchart | `ci.yml` | bash smoke tests only | **no unit tests exist yet** — FLOW-1 ([#28](https://github.com/FPVibe/flowchart/issues/28)) adds the harness and an `npm test` step ahead of the smoke tests |
 | fpv-tools | `test.yml` | `deno fmt --check` + `deno test` | — |
 | docs | — | none | [DOCS-6 / docs#11](https://github.com/FPVibe/docs/issues/11): link check, shellcheck, compose validation |
 
