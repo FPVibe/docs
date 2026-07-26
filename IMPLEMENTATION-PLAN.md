@@ -158,6 +158,35 @@ judgment and note the choice in the PR. The bar for an `ARCH:` issue is
 "the documented design can't work as specified," not "I'd have done it
 differently."
 
+### 1.8 Phase 0 — agent bootstrap
+
+An agent dispatched at a repo loads **that repo's** instruction file, not
+this one. Today that means it gets the wrong rules:
+
+| Repo | Has | Problem |
+|------|-----|---------|
+| fpv-inventory | `claude.md` (lowercase) | unmodified template; says the repo *is* a template; tells the agent to `apt install gh` and use `gh` for all GitHub ops — wrong in web sessions, where only the GitHub MCP tools exist |
+| fpv-tools | `claude.md` (lowercase) | unmodified template |
+| flowchart | `AGENTS.md` | no `CLAUDE.md` at all; `AGENTS.md` itself is good repo-specific content worth keeping |
+
+None carry the FPVibe deltas (guardrails, Copilot loop, checkpoints,
+interrupts, `ARCH:` protocol). Lowercase `claude.md` may not be auto-loaded
+on a case-sensitive filesystem, so those repos effectively ship no rules.
+
+**Phase 0 fixes this and gates everything else** — INV-0
+([#51](https://github.com/FPVibe/fpv-inventory/issues/51)), FLOW-0
+([#36](https://github.com/FPVibe/flowchart/issues/36)), TOOLS-0
+([#26](https://github.com/FPVibe/fpv-tools/issues/26)). Each copies this
+repo's CLAUDE.md **in full** into the target repo as `CLAUDE.md` (content,
+not a link — no read-time cross-repo dependency) plus a short repo-specific
+section. flowchart keeps `AGENTS.md` and cross-links.
+
+Note on cross-repo reads generally: all FPVibe repos are **public**, so an
+agent scoped to one repo can still fetch this plan over plain HTTPS
+(`raw.githubusercontent.com/FPVibe/docs/main/IMPLEMENTATION-PLAN.md`) with
+no repo attachment. Issue bodies are written to be self-sufficient anyway —
+the plan link is a full-spec pointer, not a prerequisite.
+
 ---
 
 ## 2. Decisions adopted
@@ -191,6 +220,9 @@ are filed.
 
 | Plan ID | Repo | Title | Phase | Depends on | Issue |
 |---------|------|-------|-------|------------|-------|
+| INV-0 | fpv-inventory | Adopt FPVibe CLAUDE.md (replace stale template guide) | 0 | — | [fpv-inventory#51](https://github.com/FPVibe/fpv-inventory/issues/51) |
+| FLOW-0 | flowchart | Add FPVibe CLAUDE.md alongside AGENTS.md | 0 | — | [flowchart#36](https://github.com/FPVibe/flowchart/issues/36) |
+| TOOLS-0 | fpv-tools | Adopt FPVibe CLAUDE.md (replace stale template guide) | 0 | — | [fpv-tools#26](https://github.com/FPVibe/fpv-tools/issues/26) |
 | DOCS-1 | docs | Record adopted decisions in ARCHITECTURE/API-CONTRACT; add CHANGELOG | — | — | [docs#5](https://github.com/FPVibe/docs/issues/5) |
 | DOCS-2 | docs | Conformance check script + federation smoke compose | — | — | [docs#6](https://github.com/FPVibe/docs/issues/6) |
 | DOCS-6 | docs | CI for the docs repo (link check, shellcheck, compose validation) | — | — | [docs#11](https://github.com/FPVibe/docs/issues/11) |
