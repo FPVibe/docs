@@ -13,7 +13,8 @@ where available; in remote/web sessions use the GitHub MCP tools instead.
 
 ### Pull Requests & Commits
 
-- Do not include session URLs, agent names, or tool identifiers in PR bodies, commit messages, or code comments — keep those to chat only
+- Do not include session URLs, agent names, or tool identifiers in the prose of PR bodies, commit messages, or code comments — keep those to chat only
+  - **Exempt:** machine-readable trailers at the end of a commit message (`Co-Authored-By:`, `Claude-Session:`, and the like). They're metadata for tooling, not prose, and some harnesses add them automatically. The rule targets narrative text — a commit body or PR description that reads like a session transcript
 - PR descriptions: summary bullets + a test plan checklist is enough
 - Always reference the closing issue with `Resolves #X` (or `Closes #X`) in the PR body so GitHub auto-closes it on merge
 

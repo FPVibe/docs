@@ -24,7 +24,8 @@ All work follows [CLAUDE.md](CLAUDE.md) (derived from `cori/claude-code-base`):
 - **Mobile-responsive, dark-default** UI using the §9 palette
   (primary `#9ecae1`, secondary `#9e7bb5`, accent `#f08a3c`).
 - **Commit early and often.** No session URLs / agent names / model IDs in
-  commits, PR bodies, or code comments.
+  the prose of commits, PR bodies, or code comments — machine-readable
+  commit trailers (`Co-Authored-By:`, `Claude-Session:`) are exempt.
 - **PRs reference their issue** with `Resolves #N` so merge closes it.
 - **Copilot review loop.** Every PR gets a Copilot review on creation;
   address or answer every comment and re-request review after pushing
