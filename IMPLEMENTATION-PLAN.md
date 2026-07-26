@@ -1,7 +1,7 @@
 # FPVibe — v1.0 Architecture Implementation Plan
 
 Status: Active · companion to [ARCHITECTURE.md](ARCHITECTURE.md) and [API-CONTRACT.md](API-CONTRACT.md)
-Audience: implementing agents (Claude Code / Sonnet-class, opencode, Hermes) and future-Cori
+Audience: implementing agents (Claude Code, opencode, Hermes) and future-Cori
 
 This plan turns ARCHITECTURE.md §10 (Implementation priorities) into discrete,
 self-verifiable GitHub issues across the FPVibe org. Every task below is filed

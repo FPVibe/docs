@@ -92,7 +92,7 @@ piece of work.
 
 Add GitHub Actions for automations that make sense: if there's a Dockerfile,
 make and release a package; since you're building tests, make sure actions run
-the tests on push, &ct.
+the tests on push, etc.
 
 #### ❌ No React
 
