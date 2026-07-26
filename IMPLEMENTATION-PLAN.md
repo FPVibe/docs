@@ -880,9 +880,9 @@ PRAGMA pattern in `src/db/index.ts` (see `training_plan_id`).
 npm test
 npm start & SERVER_PID=$!
 sleep 2
-SID=$(curl -sf -X POST localhost:3000/api/sessions -H 'Content-Type: application/json' -d '{"date":"2026-07-25","craft_inventory_id":5}' | jq .id)
-curl -sf "localhost:3000/api/sessions?craft=5&limit=1" | jq -e --argjson sid "$SID" '.[0].id==$sid'
-curl -sf localhost:3000/api/health | jq -e '.name=="flowchart"'
+SID=$(curl -sf -X POST http://localhost:3000/api/sessions -H 'Content-Type: application/json' -d '{"date":"2026-07-25","craft_inventory_id":5}' | jq .id)
+curl -sf "http://localhost:3000/api/sessions?craft=5&limit=1" | jq -e --argjson sid "$SID" '.[0].id==$sid'
+curl -sf http://localhost:3000/api/health | jq -e '.name=="flowchart"'
 kill $SERVER_PID
 ```
 
@@ -920,7 +920,7 @@ cross-tool contract (DOCS-1 documents this).
 ```bash
 npm test
 INVENTORY_URL= npm start & SERVER_PID=$!
-sleep 2 && curl -sf localhost:3000/api/federation/builds | jq -e '.enabled==false'
+sleep 2 && curl -sf http://localhost:3000/api/federation/builds | jq -e '.enabled==false'
 kill $SERVER_PID
 # end-to-end (after INV-4, via DOCS-2 compose): .enabled==true and .builds|length>=0
 ```
@@ -1063,7 +1063,7 @@ session-type profiles → generated tickbox checklist) translated to tables.
 ```bash
 npm test
 npm start & SERVER_PID=$!
-sleep 2 && curl -s -o /dev/null -w '%{http_code}' 'localhost:3000/api/packing-lists?session_type=nope' | grep -q 404
+sleep 2 && curl -s -o /dev/null -w '%{http_code}' 'http://localhost:3000/api/packing-lists?session_type=nope' | grep -q 404
 kill $SERVER_PID
 ```
 
@@ -1108,7 +1108,7 @@ kill $SERVER_PID
 ```bash
 npm test
 npm start & SERVER_PID=$!
-sleep 2 && curl -sf 'localhost:3000/api/packing-lists?session_type=blocked-drill' | jq -e '.items|length>0'
+sleep 2 && curl -sf 'http://localhost:3000/api/packing-lists?session_type=blocked-drill' | jq -e '.items|length>0'
 kill $SERVER_PID
 ```
 
