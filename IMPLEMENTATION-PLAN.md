@@ -373,7 +373,7 @@ does PRAGMA-guarded additive column adds — extend both.
 
 ```bash
 deno task test
-deno check **/*.ts
+git ls-files '*.ts' | xargs deno check
 ```
 
 ---
@@ -443,7 +443,7 @@ API-CONTRACT.md §3.4/§3.5.
 deno task test
 # with server running and at least one part created via the UI:
 curl -sf 'http://localhost:8000/api/parts?type=motor' | jq -e 'type=="array"'
-curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/parts/999999 | grep -q 404
+test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/parts/999999)" = 404
 ```
 
 ---
@@ -510,8 +510,8 @@ top-level stock rows and as child rows installed in builds.
 ```bash
 deno task test
 # with a build that has children:
-B=$(curl -sf http://localhost:8000/api/builds | jq '.[0].id')
-curl -sf http://localhost:8000/api/builds/$B/bom | jq -e '.[0] | has("on_hand") and has("allocated") and has("free") and .role==null'
+B=$(curl -sf http://localhost:8000/api/builds | jq -e '.[0].id')   # fails if no builds exist
+curl -sf "http://localhost:8000/api/builds/$B/bom" | jq -e '.[0] | has("on_hand") and has("allocated") and has("free") and .role==null'
 ```
 
 ---
@@ -804,7 +804,7 @@ claude-code-base template boilerplate.
 ```bash
 docker build -t inv-test .
 docker run -d --name inv-test -p 8000:8000 inv-test
-docker exec inv-test id -u | grep -q 1000
+test "$(docker exec inv-test id -u)" = 1000
 sleep 2 && curl -sf http://localhost:8000/api/health | jq -e '.name=="fpv-inventory"'
 docker rm -f inv-test
 grep -qi "federation" README.md && ! grep -qi "template" README.md
@@ -1063,7 +1063,7 @@ session-type profiles → generated tickbox checklist) translated to tables.
 ```bash
 npm test
 npm start & SERVER_PID=$!
-sleep 2 && curl -s -o /dev/null -w '%{http_code}' 'http://localhost:3000/api/packing-lists?session_type=nope' | grep -q 404
+sleep 2 && test "$(curl -s -o /dev/null -w '%{http_code}' 'http://localhost:3000/api/packing-lists?session_type=nope')" = 404
 kill $SERVER_PID
 ```
 
@@ -1165,7 +1165,7 @@ grep -qi "session-event" AGENTS.md
 **Verification**
 
 ```bash
-grep -qi "addendum\|state as of" fpvibe-context.md
+grep -qiE "addendum|state as of" fpvibe-context.md
 ```
 
 ---
@@ -1300,8 +1300,11 @@ not free to maintain.
 **Verification**
 
 ```bash
-docker build -t tools-test . && docker run -d -p 8080:8080 --name tools-test tools-test
-curl -sf http://localhost:8080/ | grep -qi fpv && docker rm -f tools-test
+docker build -t tools-test .
+docker run -d -p 8080:8080 --name tools-test tools-test
+sleep 2 && curl -sf http://localhost:8080/ | grep -qi fpv; RC=$?
+docker rm -f tools-test        # cleanup runs even when the check above failed
+test $RC -eq 0
 ```
 
 ---
