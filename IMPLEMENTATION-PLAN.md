@@ -1273,7 +1273,9 @@ serves at the org domain once enabled.
 ```bash
 deno task test
 curl -sfI https://fpvibe.github.io/fpv-tools/ | head -1 | grep -q 200
-! grep -ri "cori.github.io" --include='*.html' --include='*.json' --include='*.js' . | grep -v redirect
+# no references to the old origin remain — the redirect stub lives in
+# cori/cori.github.io (a different repo), so nothing here should match
+! grep -rqi 'cori\.github\.io' --include='*.html' --include='*.json' --include='*.js' .
 ```
 
 ---
