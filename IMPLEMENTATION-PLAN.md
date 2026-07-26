@@ -37,8 +37,13 @@ All work follows [CLAUDE.md](CLAUDE.md) (derived from `cori/claude-code-base`):
 Work is sized so any single issue fits comfortably in one agent session and
 survives a pause mid-stream:
 
+0. **Interrupts first.** Check for open `bug`-labeled issues in the repo
+   you're about to work in and in `FPVibe/docs`. Any open `bug` preempts
+   plan work (§1.6).
 1. Open the **master tracking issue** in `FPVibe/docs` (see §6). Find the first
-   unchecked issue whose dependencies (its `Depends on:` line) are all closed.
+   unchecked issue whose dependencies (its `Depends on:` line) are all closed
+   **and whose phase is unlocked** — the previous build stream's human
+   checkpoint must be closed (§1.5).
 2. Comment on the issue that you're picking it up. Branch from the target
    repo's default branch: `issue-<N>-<slug>`.
 3. Work TDD. Push the branch **even when incomplete** — a pushed branch with a
@@ -69,6 +74,88 @@ numbers shift.
 - Docs touched by the change updated in the same PR (README, AGENTS.md,
   API-CONTRACT.md via a `FPVibe/docs` PR when a contract shape changes)
 - Conventional commits; PR body has summary + test plan + `Resolves #N`
+
+### 1.4 CI baseline (per repo)
+
+Every FPVibe repo runs its checks in GitHub Actions on every push and PR —
+"CI green" in §1.3 presumes CI exists. Current state:
+
+| Repo | Workflow | Runs | Gap |
+|------|----------|------|-----|
+| fpv-inventory | `ci.yml` | `deno test --allow-all` | — |
+| flowchart | `ci.yml` | bash smoke tests; FLOW-1 adds `npm test` before them | unit tests until FLOW-1 lands |
+| fpv-tools | `test.yml` | `deno fmt --check` + `deno test` | — |
+| docs | — | none | [DOCS-6 / docs#11](https://github.com/FPVibe/docs/issues/11): link check, shellcheck, compose validation |
+
+Rules:
+
+- If your change isn't exercised by the repo's existing CI (new script type,
+  new runtime step), **extend the workflow in the same PR** — don't leave a
+  gap for the next agent.
+- New repos (DOCS-4's `FPVibe/skills`, DOCS-5's `fpvibe.github.io`) ship a
+  CI workflow in their **first** PR.
+
+### 1.5 Human checkpoints (verify early, correct early)
+
+Agents self-verify per issue, but only a human running the real install
+catches "technically passes, actually wrong." Checkpoint issues — filed in
+`FPVibe/docs`, owned by Cori — sit between build streams; each is a
+walk-through of the live Runtipi deployment:
+
+| Checkpoint | After | Gates | Issue |
+|------------|-------|-------|-------|
+| CHECK-1 | Phase 1 | Phase 2 buildout | [docs#12](https://github.com/FPVibe/docs/issues/12) |
+| CHECK-2 | Phases 2–3 | Phases 4–5 buildout | [docs#13](https://github.com/FPVibe/docs/issues/13) |
+| CHECK-3 | Phases 4–5 | v1.0 sign-off | [docs#14](https://github.com/FPVibe/docs/issues/14) |
+| CHECK-4 | Phases 6–7 + all above | closing the tracking issue | [docs#15](https://github.com/FPVibe/docs/issues/15) |
+
+Rules:
+
+- A gated phase's buildout **must not start** until its checkpoint issue is
+  closed. Exempt (may run anytime): repo-internal bootstrap and
+  documentation work — FLOW-1, the DOCS-* issues, TOOLS-1/2, and Phases 6–7
+  generally.
+- Closing is the gate, not ceremony: Cori can close a checkpoint with a
+  "skipped" comment to waive it consciously.
+- Findings during a checkpoint become `bug` issues (§1.6) and preempt
+  further buildout.
+
+### 1.6 Interrupts: broken beats buildout
+
+- Anything found broken — by Cori, by an agent, or during a checkpoint —
+  gets an issue **labeled `bug`** in the affected repo (`INTERRUPT:` title
+  prefix optional, for scanability).
+- Pickup rule (step 0 of §1.2): an open `bug` issue takes precedence over
+  feature buildout — oldest first unless Cori says otherwise.
+- Bug fixes follow the same discipline: failing test reproducing the bug
+  first, then the fix, CI green, Copilot loop, `Resolves #N`.
+- If a bug invalidates in-flight feature work, say so in a comment on the
+  affected issue(s) before fixing.
+
+### 1.7 Course corrections (when the architecture is wrong)
+
+Implementation will eventually contradict the spec. ARCHITECTURE.md and
+API-CONTRACT.md are canon **until amended** — never silently deviate. When
+an issue's spec can't work as written (or would clearly be worse built as
+specified):
+
+1. **Stop** work on the affected issue; comment what you found — evidence,
+   not vibes.
+2. **File** an issue in `FPVibe/docs` titled `ARCH: <problem>`: the
+   conflict, the options considered, one recommendation. Link the blocked
+   issue(s).
+3. **Cori decides** on that issue. This is deliberately a human gate — no
+   agent re-architects the federation unilaterally.
+4. **Land the decision** as a docs PR: amend ARCHITECTURE.md (§12 record)
+   and/or API-CONTRACT.md, add a CHANGELOG entry, bump the affected tool's
+   contract version if a response shape changes, and update this plan and
+   the affected issues.
+5. **Resume** the blocked work against the amended spec.
+
+Small ambiguities that don't contradict the docs don't need this — use
+judgment and note the choice in the PR. The bar for an `ARCH:` issue is
+"the documented design can't work as specified," not "I'd have done it
+differently."
 
 ---
 
@@ -105,6 +192,7 @@ are filed.
 |---------|------|-------|-------|------------|-------|
 | DOCS-1 | docs | Record adopted decisions in ARCHITECTURE/API-CONTRACT; add CHANGELOG | — | — | [docs#5](https://github.com/FPVibe/docs/issues/5) |
 | DOCS-2 | docs | Conformance check script + federation smoke compose | — | — | [docs#6](https://github.com/FPVibe/docs/issues/6) |
+| DOCS-6 | docs | CI for the docs repo (link check, shellcheck, compose validation) | — | — | [docs#11](https://github.com/FPVibe/docs/issues/11) |
 | INV-1 | fpv-inventory | Gear schema migration (`gear` type + 4 columns) | 1 | — | [fpv-inventory#37](https://github.com/FPVibe/fpv-inventory/issues/37) |
 | INV-2 | fpv-inventory | JSON API scaffolding + `GET /api/health` | 1 | — | [fpv-inventory#38](https://github.com/FPVibe/fpv-inventory/issues/38) |
 | INV-3 | fpv-inventory | `GET /api/parts`, `GET /api/parts/:id` | 1 | INV-1, INV-2 | [fpv-inventory#39](https://github.com/FPVibe/fpv-inventory/issues/39) |
@@ -1229,6 +1317,10 @@ made executable. All use DOCS-2's tooling.
 | 6 | DOCS-4 | Marketplace add + plugin install works in a fresh Claude Code session; Hermes verified by Cori |
 | 7 | DOCS-1,3,5 + TOOLS-1 + INV-14 | Docs updated; `fpvibe.github.io` and `fpvibe.github.io/fpv-tools` live; inventory README real |
 
+Self-verification is necessary but not sufficient: each build stream's human
+sign-off is its **checkpoint issue** (§1.5, docs#12–#15) — the walk-through
+of the live install that closes the loop.
+
 ---
 
 ## 6. Tracking
@@ -1252,3 +1344,5 @@ Collected from the issues above — things agents can't (or shouldn't) do:
    quality question for blackbox analysis.
 5. Refine the FLOW-7 starter packing lists to reality.
 6. Provide the inventory collation doc provenance for DOCS-3, if wanted.
+7. Run the checkpoint walk-throughs (§1.5, docs#12–#15) — each one gates the
+   next build stream, and closing them is what advances the plan.

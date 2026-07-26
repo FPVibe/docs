@@ -94,6 +94,13 @@ Add GitHub Actions for automations that make sense: if there's a Dockerfile,
 make and release a package; since you're building tests, make sure actions run
 the tests on push, etc.
 
+FPVibe delta: CI is mandatory, not "as makes sense" — **every FPVibe repo
+runs its full check suite in GitHub Actions on every push and PR.** If your
+change isn't exercised by the repo's existing CI, extend the workflow in the
+same PR. A brand-new repo ships its CI workflow in its first PR. "CI green"
+is part of Definition of Done everywhere (IMPLEMENTATION-PLAN.md §1.4 in
+`FPVibe/docs` tracks per-repo state).
+
 #### ❌ No React
 
 This bears repeating: **Do not use React**.
@@ -128,6 +135,28 @@ Every interface must work well on mobile:
 
 FPVibe delta: dark theme is the default (§9 of ARCHITECTURE.md), with the
 Multiboard palette — primary `#9ecae1`, secondary `#9e7bb5`, accent `#f08a3c`.
+
+### Priorities, Checkpoints, and Course Corrections
+
+FPVibe delta — three rules that shape what to work on and when
+(full protocol: `FPVibe/docs` IMPLEMENTATION-PLAN.md §1.5–1.7):
+
+- **Broken beats buildout.** Before picking up feature work, check for open
+  `bug`-labeled issues in the target repo and `FPVibe/docs`; any open `bug`
+  preempts the plan. Bug fixes still follow TDD: failing test reproducing
+  the bug first.
+- **Human checkpoints gate build streams.** Checkpoint issues in
+  `FPVibe/docs` mark where Cori walks through the live install; a gated
+  phase doesn't start until its checkpoint closes. Don't route around an
+  open checkpoint — repo-internal bootstrap and docs work are the only
+  exemptions.
+- **Never silently deviate from the architecture.** ARCHITECTURE.md and
+  API-CONTRACT.md are canon until amended. If an issue's spec can't work as
+  written: stop, comment your evidence, file an `ARCH:` issue in
+  `FPVibe/docs` with options and a recommendation, and wait for Cori's
+  call. The decision lands as a docs PR (spec amendment + CHANGELOG +
+  contract version bump when shapes change) before the blocked work
+  resumes.
 
 ### FPVibe Federation Guardrails
 
