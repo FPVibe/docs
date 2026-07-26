@@ -293,7 +293,7 @@ self-contained.
 **Verification**
 
 ```bash
-grep -c "Resolved" ARCHITECTURE.md   # ≥ 8
+test "$(grep -c 'Resolved' ARCHITECTURE.md)" -ge 8
 test -f CHANGELOG.md
 grep -q "INVENTORY_PUBLIC_URL" API-CONTRACT.md
 ```
@@ -1138,7 +1138,9 @@ kill $SERVER_PID
 
 ```bash
 npm test
-grep -q INVENTORY_URL docker-compose.yml README.md
+# both vars documented in both places — one grep per file so neither can pass alone
+grep -q INVENTORY_URL docker-compose.yml && grep -q INVENTORY_PUBLIC_URL docker-compose.yml
+grep -q INVENTORY_URL README.md && grep -q INVENTORY_PUBLIC_URL README.md
 grep -qi "session-event" AGENTS.md
 ```
 
@@ -1239,7 +1241,7 @@ TOOLS-1)
 **Verification**
 
 ```bash
-curl -sfI https://fpvibe.github.io/ | head -1 | grep -q 200
+test "$(curl -sL -o /dev/null -w '%{http_code}' https://fpvibe.github.io/)" = 200
 ```
 
 ---
@@ -1272,7 +1274,7 @@ serves at the org domain once enabled.
 
 ```bash
 deno task test
-curl -sfI https://fpvibe.github.io/fpv-tools/ | head -1 | grep -q 200
+test "$(curl -sL -o /dev/null -w '%{http_code}' https://fpvibe.github.io/fpv-tools/)" = 200
 # no references to the old origin remain — the redirect stub lives in
 # cori/cori.github.io (a different repo), so nothing here should match
 ! grep -rqi 'cori\.github\.io' --include='*.html' --include='*.json' --include='*.js' .
