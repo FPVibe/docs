@@ -315,10 +315,10 @@ layer without disturbing them.
 
 ```bash
 deno task test
-DB_PATH=/tmp/inv-test.db deno run --allow-all main.ts &
+DB_PATH=/tmp/inv-test.db deno run --allow-all main.ts & SERVER_PID=$!
 sleep 1
 curl -sf http://localhost:8000/api/health | jq -e '.status=="ok" and .name=="fpv-inventory" and (.version|length>0)'
-kill %1
+kill $SERVER_PID
 ```
 
 ---
@@ -754,9 +754,9 @@ Zero new prod dependencies: `node:test` + Hono's `app.request()`.
 
 ```bash
 npm test
-npm start &   # smoke: server still boots identically
+npm start & SERVER_PID=$!   # smoke: server still boots identically
 sleep 2 && curl -sf http://localhost:3000/api/health | jq -e '.status=="ok"'
-kill %1
+kill $SERVER_PID
 ```
 
 ---
@@ -790,12 +790,12 @@ PRAGMA pattern in `src/db/index.ts` (see `training_plan_id`).
 
 ```bash
 npm test
-npm start &
+npm start & SERVER_PID=$!
 sleep 2
 SID=$(curl -sf -X POST localhost:3000/api/sessions -H 'Content-Type: application/json' -d '{"date":"2026-07-25","craft_inventory_id":5}' | jq .id)
 curl -sf "localhost:3000/api/sessions?craft=5&limit=1" | jq -e --argjson sid "$SID" '.[0].id==$sid'
 curl -sf localhost:3000/api/health | jq -e '.name=="flowchart"'
-kill %1
+kill $SERVER_PID
 ```
 
 ---
@@ -831,9 +831,9 @@ cross-tool contract (DOCS-1 documents this).
 
 ```bash
 npm test
-INVENTORY_URL= npm start &
+INVENTORY_URL= npm start & SERVER_PID=$!
 sleep 2 && curl -sf localhost:3000/api/federation/builds | jq -e '.enabled==false'
-kill %1
+kill $SERVER_PID
 # end-to-end (after INV-4, via DOCS-2 compose): .enabled==true and .builds|length>=0
 ```
 
@@ -974,9 +974,9 @@ session-type profiles → generated tickbox checklist) translated to tables.
 
 ```bash
 npm test
-npm start &
+npm start & SERVER_PID=$!
 sleep 2 && curl -s -o /dev/null -w '%{http_code}' 'localhost:3000/api/packing-lists?session_type=nope' | grep -q 404
-kill %1
+kill $SERVER_PID
 ```
 
 ---
@@ -1019,9 +1019,9 @@ kill %1
 
 ```bash
 npm test
-npm start &
+npm start & SERVER_PID=$!
 sleep 2 && curl -sf 'localhost:3000/api/packing-lists?session_type=blocked-drill' | jq -e '.items|length>0'
-kill %1
+kill $SERVER_PID
 ```
 
 ---

@@ -22,10 +22,13 @@ where available; in remote/web sessions use the GitHub MCP tools instead.
 FPVibe delta: every PR gets an automated Copilot review pass before it is
 considered done.
 
-1. **On PR creation**, request a review from GitHub Copilot — in remote/web
-   sessions use the `request_copilot_review` GitHub MCP tool; locally,
-   request Copilot as a reviewer (`gh pr edit <n> --add-reviewer Copilot`,
-   or the web UI if the CLI rejects the bot reviewer).
+1. **On PR creation**, request a review from GitHub Copilot by adding
+   Copilot as a reviewer through whatever mechanism the session has: the
+   GitHub web UI (Reviewers → Copilot), `gh pr edit <n> --add-reviewer
+   Copilot` where the CLI accepts the bot reviewer, or the GitHub MCP
+   server's Copilot review-request tool in remote/web sessions. If none of
+   these are available, note it in the PR and continue — a missing Copilot
+   reviewer must not block the work.
 2. **Watch and triage.** Keep watching the PR (subscribe to PR activity in
    remote sessions). For each Copilot comment either fix it, or reply
    briefly why not. Copilot findings are advisory: the issue spec,
