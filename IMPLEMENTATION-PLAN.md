@@ -26,6 +26,9 @@ All work follows [CLAUDE.md](CLAUDE.md) (derived from `cori/claude-code-base`):
 - **Commit early and often.** No session URLs / agent names / model IDs in
   commits, PR bodies, or code comments.
 - **PRs reference their issue** with `Resolves #N` so merge closes it.
+- **Copilot review loop.** Every PR gets a Copilot review on creation;
+  address or answer every comment and re-request review after pushing
+  fixes (CLAUDE.md § Copilot Review Loop).
 - **Federation guardrails** (ARCHITECTURE.md §11): no shared DB/filesystem,
   cross-tool calls read-only + degradable, no auth, one job per tool.
 
@@ -42,10 +45,14 @@ survives a pause mid-stream:
    red test and a WIP draft PR is a valid pause point; note the stopping point
    in a PR comment so the next agent (or you, later) can resume.
 4. Before marking done: run the issue's **Verification** block verbatim. Every
-   command must pass. Then open/finalize the PR with `Resolves #N`, get CI
-   green, merge (or leave for review per repo norms), and tick the box on the
-   tracking issue.
-5. If an issue turns out to be wrong or blocked, don't silently skip: comment
+   command must pass. Then open/finalize the PR with `Resolves #N` and get CI
+   green.
+5. Run the **Copilot review loop** (CLAUDE.md § Copilot Review Loop): request
+   a Copilot review, fix or answer every comment, re-request review after
+   each push of fixes, exit when a round comes back clean (cap: three
+   rounds). Then merge (or leave for review per repo norms) and tick the box
+   on the tracking issue.
+6. If an issue turns out to be wrong or blocked, don't silently skip: comment
    on it with what you found, and note it on the tracking issue.
 
 Dependencies are referenced by **plan ID** (`INV-2`, `FLOW-1`, …), which map to
@@ -57,6 +64,8 @@ numbers shift.
 - New/changed behavior covered by tests (repo's harness; see bootstrap issues)
 - Full test suite and CI green
 - Issue's Verification block passes verbatim
+- Copilot review loop completed: a review round came back clean, or the
+  remaining disagreement is summarized in a PR comment
 - Docs touched by the change updated in the same PR (README, AGENTS.md,
   API-CONTRACT.md via a `FPVibe/docs` PR when a contract shape changes)
 - Conventional commits; PR body has summary + test plan + `Resolves #N`

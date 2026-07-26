@@ -17,6 +17,28 @@ where available; in remote/web sessions use the GitHub MCP tools instead.
 - PR descriptions: summary bullets + a test plan checklist is enough
 - Always reference the closing issue with `Resolves #X` (or `Closes #X`) in the PR body so GitHub auto-closes it on merge
 
+### Copilot Review Loop
+
+FPVibe delta: every PR gets an automated Copilot review pass before it is
+considered done.
+
+1. **On PR creation**, request a review from GitHub Copilot — in remote/web
+   sessions use the `request_copilot_review` GitHub MCP tool; locally,
+   request Copilot as a reviewer (`gh pr edit <n> --add-reviewer Copilot`,
+   or the web UI if the CLI rejects the bot reviewer).
+2. **Watch and triage.** Keep watching the PR (subscribe to PR activity in
+   remote sessions). For each Copilot comment either fix it, or reply
+   briefly why not. Copilot findings are advisory: the issue spec,
+   ARCHITECTURE.md, and API-CONTRACT.md always win, and a suggestion is
+   never a reason to expand scope or bend the federation guardrails.
+3. **Re-request after pushing fixes.** Copilot reviews a snapshot; after
+   each push that addresses comments, request a fresh Copilot review so the
+   new diff gets a pass.
+4. **Exit** when a review round returns no new actionable comments (or only
+   restates ones already answered). Cap the loop at three rounds — if
+   substantive disagreement remains after that, summarize it in a PR comment
+   and leave the call to Cori rather than looping further.
+
 ## Development Philosophy and Methodology
 
 ### Red-Green-Refactor (TDD)
