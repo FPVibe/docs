@@ -115,7 +115,7 @@ are filed.
 | INV-8 | fpv-inventory | Gear UI (create/edit serial+warranty fields) | 1 | INV-1 | [fpv-inventory#44](https://github.com/FPVibe/fpv-inventory/issues/44) |
 | FLOW-1 | flowchart | Test harness bootstrap (node:test, exported app) | 2 | — | [flowchart#28](https://github.com/FPVibe/flowchart/issues/28) |
 | FLOW-2 | flowchart | `craft_inventory_id` + session query params + health `name` | 2 | FLOW-1 | [flowchart#29](https://github.com/FPVibe/flowchart/issues/29) |
-| FLOW-3 | flowchart | Federation proxy: `/api/federation/builds` + `/config` | 2 | FLOW-1, INV-4 | [flowchart#30](https://github.com/FPVibe/flowchart/issues/30) |
+| FLOW-3 | flowchart | Federation proxy: `/api/federation/builds` + `/api/federation/config` | 2 | FLOW-1, INV-4 | [flowchart#30](https://github.com/FPVibe/flowchart/issues/30) |
 | FLOW-4 | flowchart | Craft dropdown with degradation (fetch → cache → fallback) | 2 | FLOW-2, FLOW-3 | [flowchart#31](https://github.com/FPVibe/flowchart/issues/31) |
 | FLOW-5 | flowchart | Cross-tool links via `INVENTORY_PUBLIC_URL` | 2 | FLOW-4 | [flowchart#32](https://github.com/FPVibe/flowchart/issues/32) |
 | INV-9 | fpv-inventory | "Last flown" on build detail via `SESSIONS_URL` | 3 | INV-4, FLOW-2 | [fpv-inventory#45](https://github.com/FPVibe/fpv-inventory/issues/45) |
