@@ -4,7 +4,7 @@ This document defines the JSON API contract between FPVibe federation tools.
 It is the binding spec for cross-tool communication. Each tool implements its
 side; consumers degrade gracefully when endpoints are unreachable.
 
-Status: Draft v1.0 · companion to ARCHITECTURE.md
+Status: Draft v2.0 · companion to ARCHITECTURE.md
 
 ---
 
@@ -76,8 +76,8 @@ detect incompatible API versions when debugging.
 
 ### 3.1 GET /api/builds
 
-Returns top-level flyable assemblies. A "build" is a part where `parent_id IS NULL`
-and `type = "craft"`.
+Returns the builds. A build is a first-class entity with its own row — it is
+not a part with a special `type`.
 
 **Query parameters:**
 
@@ -92,74 +92,79 @@ and `type = "craft"`.
   {
     "id": 5,
     "name": "LionBee",
-    "type": "craft",
     "status": "in-use",
-    "quantity": 1,
-    "specs": "FC: BetaFPV F4 1S\nMotors: 0702 30000KV\nFrame: Meteor65",
+    "class": "5-inch freestyle",
     "notes": "Power loops still mushy on exit",
-    "photo_path": "5-1719504000.jpg"
+    "specs": "FC: BetaFPV F4 1S\nMotors: 0702 30000KV\nFrame: Meteor65",
+    "photo_path": "5-1719504000.jpg",
+    "created_at": "2026-01-15 10:30:00",
+    "updated_at": "2026-07-04 18:22:00"
   },
   {
     "id": 7,
     "name": "Air65III",
-    "type": "craft",
     "status": "in-use",
-    "quantity": 1,
-    "specs": "FC: Super BF F4 AIO\nMotors: 0802 27000KV\nFrame: Air65",
+    "class": null,
     "notes": "",
-    "photo_path": null
+    "specs": "FC: Super BF F4 AIO\nMotors: 0802 27000KV\nFrame: Air65",
+    "photo_path": null,
+    "created_at": "2026-02-11 09:15:00",
+    "updated_at": "2026-07-01 16:40:00"
   }
 ]
 ```
+
+`class` is free text (`"5-inch freestyle"`, `"whoop"`, `"7-inch long range"`),
+not a closed enum — it is a label for the builder, not a filter key.
 
 **Empty array when no builds exist.** Not an error.
 
 ### 3.2 GET /api/builds/:id
 
-Returns a single build with its component tree (one level deep — the BOM).
+Returns a single build with its BOM.
 
 **Path parameters:**
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `id` | integer | Part ID of the build |
+| `id` | integer | Build ID |
 
 **Response (200):**
 ```json
 {
   "id": 5,
   "name": "LionBee",
-  "type": "craft",
   "status": "in-use",
-  "quantity": 1,
-  "specs": "FC: BetaFPV F4 1S\nMotors: 0702 30000KV\nFrame: Meteor65",
+  "class": "5-inch freestyle",
   "notes": "Power loops still mushy on exit",
+  "specs": "FC: BetaFPV F4 1S\nMotors: 0702 30000KV\nFrame: Meteor65",
   "photo_path": "5-1719504000.jpg",
-  "parent_id": null,
   "created_at": "2026-01-15 10:30:00",
   "updated_at": "2026-07-04 18:22:00",
-  "children": [
+  "components": [
     {
-      "id": 8,
+      "part_id": 8,
       "name": "0702 Motor",
       "type": "motor",
-      "status": "in-use",
       "quantity": 4,
-      "specs": null,
+      "role": "motors",
       "notes": null
     },
     {
-      "id": 12,
+      "part_id": 12,
       "name": "BetaFPV F4 1S AIO",
       "type": "fc",
-      "status": "in-use",
       "quantity": 1,
-      "specs": "16MB blackbox, 5V BEC",
-      "notes": "Betaflight 4.5.0"
+      "role": null,
+      "notes": null
     }
   ]
 }
 ```
+
+`components` is the BOM. `quantity` is how many of that part this build uses.
+The part's own `quantity` (from `GET /api/parts/:id`) is how many exist in
+total — see §3.6.
 
 **404 when build not found:**
 ```json
@@ -168,9 +173,9 @@ Returns a single build with its component tree (one level deep — the BOM).
 
 ### 3.3 GET /api/builds/:id/bom
 
-Returns the BOM for a build with part details and computed allocation. This is
-the allocation mechanic: inventory reads its own parts and their parent-child
-relationships (children ARE the BOM) to compute on-hand/allocated/free.
+Returns the BOM for a build with per-component allocation figures. This is
+the allocation mechanic: inventory reads its own parts and its BOM join table
+to compute on-hand/allocated/free.
 
 **Response (200):**
 ```json
@@ -180,7 +185,7 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
     "part_name": "0702 Motor",
     "part_type": "motor",
     "qty_in_build": 4,
-    "role": null,
+    "role": "motors",
     "on_hand": 12,
     "allocated": 4,
     "free": 8
@@ -200,18 +205,24 @@ relationships (children ARE the BOM) to compute on-hand/allocated/free.
 
 **How allocation is computed:**
 
-Parts are grouped by `name + type` to relate stock rows to installed rows. A single logical part (e.g. "0702 Motor") may have multiple rows: one or more top-level stock rows (`parent_id IS NULL`, `status: "unused"`) and one child row per build that installs it (`parent_id` pointing to the build, `status: "in-use"`). The grouping key is `name + type`.
+A part row is a physical thing you own; its `quantity` is the **total owned**,
+whether or not some of them are installed in a build. The BOM join table
+(`build_parts`) records how many of a part each build uses.
 
-**Grouping key constraint:** `name` is treated as a stable identifier within a type — parts are expected to use consistent naming across stock and installed rows (e.g. always "0702 Motor", not "0702 motor" or "0702Motor"). If disambiguation is needed, include vendor info in the name (e.g. "BetaFPV 0702 Motor"). Future versions may switch to a stable surrogate key if this proves fragile.
+1. `on_hand` = the part's `quantity` — total owned.
+2. `allocated` = sum of `build_parts.quantity` across **all** builds that use
+   this part.
+3. `free` = `on_hand` − `allocated` — how many are unallocated (on the shelf).
 
-1. For each child part of the build, get `qty_in_build` from the child record's `quantity` field (how many of that part are installed in this build).
-2. `on_hand` = total owned quantity = sum of `quantity` across ALL rows in the same name+type group (both top-level stock rows AND child rows installed in builds). This is the total quantity you own, regardless of where it is.
-3. `allocated` = sum of `qty_in_build` across ALL builds that install this part — i.e., the `quantity` of every child row whose `parent_id` points to a build and whose name+type matches this part.
-4. `free` = `on_hand` - `allocated` (= total owned minus total installed across all builds).
+**Example:** you own 12 "0702 Motor" and 4 of them are installed in LionBee.
+`on_hand` = 12, `allocated` = 4, `free` = 8 — matching the response above and
+the reverse view in §3.6.
 
-**Example:** You own 12 "0702 Motor" (8 in stock + 4 installed in LionBee). `on_hand` = 12, `allocated` = 4, `free` = 8 — matching the response example above and the reverse view in §3.6.
-
-**Note on `role`:** the parts schema has no `role` column yet, and the children-are-the-BOM model has nowhere to store one — see open question §7.6. Until that's resolved, `role` is nullable and implementations return `null`, as the example above shows; once a source for the field exists, the intent is values like `"motors"` or `"fc-aio"`.
+**Note on `role`:** `role` is stored on the BOM join row, so it is set when the
+part is installed into a build and distinguishes two instances of the same
+part type in one build (e.g. main and backup camera). It is nullable, and
+implementations return `null` when no role was set. This resolves open
+question §7.6.
 
 ### 3.4 GET /api/parts
 
@@ -223,9 +234,8 @@ are returned here for backward compatibility, but for gear-specific fields
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `type` | string | Filter by type: `motor`, `fc`, `esc`, `vtx`, `frame`, `camera`, `antenna`, `battery`, `craft`, `gear`, `other` |
+| `type` | string | Filter by type: `motor`, `fc`, `esc`, `vtx`, `frame`, `camera`, `antenna`, `battery`, `gear`, `other` |
 | `status` | string | Filter by status |
-| `parent_id` | integer | Filter by parent (0 = top-level only) |
 | `q` | string | Case-insensitive name search |
 
 **Response (200):**
@@ -235,15 +245,18 @@ are returned here for backward compatibility, but for gear-specific fields
     "id": 8,
     "name": "0702 Motor",
     "type": "motor",
-    "status": "in-use",
-    "quantity": 4,
-    "parent_id": 5,
+    "status": "unused",
+    "quantity": 12,
     "specs": null,
     "notes": null,
     "photo_path": null
   }
 ]
 ```
+
+A part has no `parent_id` — a part's relationship to a build is expressed by
+the BOM join, not by containment. `quantity` is the total owned; use
+`/api/parts/:id/allocation` (§3.6) to see how much of it is allocated.
 
 ### 3.5 GET /api/parts/:id
 
@@ -255,12 +268,11 @@ Returns a single part with its history.
   "id": 8,
   "name": "0702 Motor",
   "type": "motor",
-  "status": "in-use",
-  "quantity": 4,
+  "status": "unused",
+  "quantity": 12,
   "specs": null,
   "notes": null,
   "photo_path": null,
-  "parent_id": 5,
   "created_at": "2026-01-15 10:30:00",
   "updated_at": "2026-07-01 14:00:00",
   "history": [
@@ -268,8 +280,8 @@ Returns a single part with its history.
       "id": 1,
       "part_id": 8,
       "action": "created",
-      "from_parent_id": null,
-      "to_parent_id": 5,
+      "from_build_id": null,
+      "to_build_id": null,
       "old_status": null,
       "new_status": null,
       "quantity_delta": null,
@@ -280,8 +292,8 @@ Returns a single part with its history.
       "id": 5,
       "part_id": 8,
       "action": "updated",
-      "from_parent_id": null,
-      "to_parent_id": null,
+      "from_build_id": null,
+      "to_build_id": null,
       "old_status": "unused",
       "new_status": "in-use",
       "quantity_delta": 0,
@@ -291,6 +303,10 @@ Returns a single part with its history.
   ]
 }
 ```
+
+**Note on history columns:** `from_build_id` / `to_build_id` reference the
+builds table (they were `from_parent_id` / `to_parent_id` in v1.0, which
+referenced parts). A `moved` entry records a part moving between builds.
 
 ### 3.6 GET /api/parts/:id/allocation
 
@@ -315,9 +331,9 @@ reverse view of the BOM: "I have this part — where is it used?"
 ```
 
 Each build that installs the part appears as one entry in `allocated`. (In this
-example dataset only LionBee installs the 0702 Motor — Air65III runs 0802 motors,
-per §3.1 — so `allocated` has one entry and the totals match §3.3: `on_hand` 12,
-`allocated` 4, `free` 8.)
+example dataset only LionBee installs the 0702 Motor — Air65III runs 0802
+motors, per §3.1 — so `allocated` has one entry and the totals match §3.3:
+`on_hand` 12, `allocated` 4, `free` 8.)
 
 **404 when part not found:**
 ```json
@@ -720,9 +736,23 @@ confirm which version is running when debugging.
 
 ### 6.2 Contract version
 
-This document is versioned: `v1.0`. Future versions will add endpoints (additive)
+This document is versioned: `v2.0`. Future versions will add endpoints (additive)
 or change response shapes (breaking). Additive changes don't require consumer
 updates. Breaking changes are noted in the changelog.
+
+**v2.0 (breaking) — builds are first-class entities.** See CHANGELOG.md for the
+full list. In summary:
+
+- `GET /api/builds` and `GET /api/builds/:id` return build objects with their
+  own fields (`class`, `created_at`, `updated_at`), no longer part objects
+  with `type: "craft"`.
+- `GET /api/builds/:id` returns `components` (the BOM) in place of `children`.
+- A part has no `parent_id`; parts relate to builds through the BOM join.
+- `GET /api/parts` no longer accepts `parent_id`; `type` no longer includes
+  `craft`.
+- Part history entries use `from_build_id` / `to_build_id` in place of
+  `from_parent_id` / `to_parent_id`.
+- Allocation is computed from the BOM join, not from name matching.
 
 ---
 
@@ -755,14 +785,10 @@ updates. Breaking changes are noted in the changelog.
    If they live in inventory, they'd be under inventory's API. Depends on
    decision #6 in ARCHITECTURE.md (which tool owns packing lists).
 
-6. **Where does the BOM `role` field come from?**
-   `GET /api/builds/:id/bom` (§3.3) returns a `role` field, but the parts table
-   has no role column and the children-are-the-BOM model has nowhere to store
-   one. Options: (a) drop the field — `part_type` conveys nearly the same
-   signal for n=1; (b) derive it from the child part's `type`; (c) add an
-   optional `role` column set when a part is installed into a build (allows
-   e.g. two cameras distinguished as main/backup). Until decided,
-   implementations return `null` (§3.3 note).
+6. ~~**Where does the BOM `role` field come from?**~~ **Resolved in v2.0.**
+   Option (c): `role` is stored on the BOM join row, so it is set when a part
+   is installed into a build and can distinguish two instances of the same part
+   type in one build (e.g. main and backup camera). It remains nullable.
 
 7. **Browser-reachable URLs and CORS.**
    The `INVENTORY_URL` / `SESSIONS_URL` examples use Docker-network hostnames
