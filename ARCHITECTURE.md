@@ -152,6 +152,7 @@ Each entity has exactly one authoritative owner. Other tools read via API; they 
 | Session (flight log) | flowchart | flowchart is the only writer |
 | Pack, Trick attempt, Crash, Review | flowchart | flowchart |
 | Build / Craft (flyable assembly) | fpv-inventory | inventory is the only writer |
+| Build BOM (build ↔ part join) | fpv-inventory | inventory is the only writer |
 | Part (component, spare, consumable) | fpv-inventory | inventory |
 | Gear (discrete serial/warranty asset) | fpv-inventory | inventory |
 | Spot (flying location) | flowchart | flowchart (until promoted to own tool) |
@@ -310,29 +311,64 @@ The entity model from v0.3 survives as a shared API schema reference. It's no lo
 
 ### Build / Craft
 
-A flyable aircraft. In inventory, it's a top-level part (parent_id IS NULL) with type = "craft" and child components (the BOM).
+A flyable aircraft. **A build is its own entity, not a kind of part.** It has
+its own table, its own row, and its own lifecycle. Its components are held in
+a join table, not by containment.
 
 ```json
 {
   "id": 5,
   "name": "LionBee",
-  "type": "craft",
   "status": "in-use",
-  "quantity": 1,
+  "class": "5-inch freestyle",
   "specs": "FC: BetaFPV F4 1S\nMotors: 0702 30000KV\nFrame: Meteor65",
   "notes": "Power loops still mushy on exit",
   "photo_path": "5-1719504000.jpg",
-  "parent_id": null,
-  "children": [
-    { "id": 8, "name": "0702 Motor", "type": "motor", "quantity": 4, "status": "in-use" },
-    { "id": 12, "name": "BetaFPV F4 1S", "type": "fc", "quantity": 1, "status": "in-use" }
+  "created_at": "2026-01-15 10:30:00",
+  "updated_at": "2026-07-04 18:22:00",
+  "components": [
+    { "part_id": 8, "name": "0702 Motor", "type": "motor", "quantity": 4, "role": "motors" },
+    { "part_id": 12, "name": "BetaFPV F4 1S", "type": "fc", "quantity": 1, "role": null }
   ]
 }
 ```
 
+**Why builds are separate from parts.** A build is an assembly of things you
+own; a part is a thing you own. When a build was a part with
+`type = "craft"`, the same table had to answer three different questions at
+once (what's on the shelf, what's installed, what's an assembly), and
+relating stock to builds required matching rows on the *name string*. That
+made allocation break on a rename and made "how many do I have?" unanswerable
+without a second query.
+
+With a separate build table and a BOM join:
+
+- A part row is a physical thing you own. Its `quantity` is the **total owned**.
+- A `build_parts` join row says how many of that part a given build uses.
+- Allocation is `on_hand` (the part's quantity) minus `allocated` (the sum of
+  the BOM join) — a real join, no string matching, immune to renames.
+- The join row can carry a `role`, which is where the BOM's `role` field comes
+  from.
+
 ### Part
 
-An inventory item — component, spare, or consumable. Same `parts` table, just not type = "craft" or not top-level.
+An inventory item — component, spare, or consumable. A part is a physical
+thing you own; `quantity` is the total owned, including any of it that is
+installed in a build. How much of it is free is an allocation question
+(`GET /api/parts/:id/allocation`), not a separate row.
+
+```json
+{
+  "id": 8,
+  "name": "0702 Motor",
+  "type": "motor",
+  "status": "unused",
+  "quantity": 12,
+  "specs": null,
+  "notes": null,
+  "photo_path": null
+}
+```
 
 **The Part/Gear boundary is fungible-vs-discrete.** A bag of props is Parts (fungible quantity); your goggles are Gear (discrete, serial-numbered, warranty-bearing). DIY accessories are Parts unless they grow a serial/warranty you actually track.
 
