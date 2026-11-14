@@ -26,3 +26,14 @@ fpv-inventory#85). Builds are their own entities; contract bumped to v2.0.
   `from_build_id`/`to_build_id`. Legacy `action: "moved"` entries can persist
   in migrated databases (§3.5).
 - Tool version bumped to `2.0.0` (§2.1).
+
+## 2026-11-13 — API-CONTRACT v2.1: storage location on parts in fpv-inventory
+
+**Additive change** (fpv-inventory#72, shipped in the location PR). Semver
+minor: existing consumers are unaffected.
+
+- Parts gain an optional `location` field (nullable free text) recording
+  physical storage, e.g. "Drawer 2 — small parts" (§3.4).
+- `GET /api/parts` gains a `location` query parameter: case-insensitive
+  substring filter on that field (§3.4).
+- Tool version bumped to `2.1.0` (§2.1).

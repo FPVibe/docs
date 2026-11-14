@@ -61,7 +61,7 @@ Response:
 ```json
 {
   "status": "ok",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "name": "fpv-inventory"
 }
 ```
@@ -237,6 +237,7 @@ are returned here for backward compatibility, but for gear-specific fields
 | `type` | string | Filter by type: `motor`, `fc`, `esc`, `vtx`, `frame`, `camera`, `antenna`, `battery`, `gear`, `other` |
 | `status` | string | Filter by status |
 | `q` | string | Case-insensitive name search |
+| `location` | string | Case-insensitive substring filter on the part's storage location (v2.1) |
 
 (v2.0: the `parent_id` filter is gone — parts are no longer nested, and `craft`
 is no longer a part type. Builds live under `/api/builds`.)
@@ -252,6 +253,7 @@ is no longer a part type. Builds live under `/api/builds`.)
     "quantity": 4,
     "specs": null,
     "notes": null,
+    "location": "Drawer 2 — small parts",
     "photo_path": null
   }
 ]
