@@ -36,4 +36,6 @@ minor: existing consumers are unaffected.
   physical storage, e.g. "Drawer 2 — small parts" (§3.4).
 - `GET /api/parts` gains a `location` query parameter: case-insensitive
   substring filter on that field (§3.4).
+- Parts gain `DELETE /api/parts/:id`: removes a part with its history; 409
+  when the part is allocated to a build (§3.5.1).
 - Tool version bumped to `2.1.0` (§2.1).

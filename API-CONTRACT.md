@@ -322,6 +322,16 @@ are now `from_build_id`/`to_build_id`. Legacy `action: "moved"` entries may
 still appear in migrated databases — new installs record `action: "installed"`
 with `to_build_id` set.)
 
+### 3.5.1 DELETE /api/parts/:id (v2.1)
+
+Deletes a part and its history. Refused with **409 Conflict** when the part has
+rows in the `build_parts` join — installed components must be removed from
+their build(s) first, so a delete can never break a build silently. **404**
+when the id is unknown. Success returns `{ "deleted": <id> }`.
+
+The companion HTML UI exposes the same behavior as a confirm-gated button on
+the part detail page.
+
 ### 3.6 GET /api/parts/:id/allocation
 
 Returns where a specific part is allocated across all builds. This is the
